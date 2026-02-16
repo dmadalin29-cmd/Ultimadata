@@ -1915,7 +1915,7 @@ async def admin_change_user_password(user_id: str, request: Request):
 
 @api_router.get("/admin/analytics/dashboard")
 async def admin_analytics_dashboard(request: Request):
-    """Advanced analytics dashboard for admin"""
+    """Advanced analytics dashboard for admin - OPTIMIZED"""
     await require_admin(request)
     
     now = datetime.now(timezone.utc)
@@ -1923,34 +1923,56 @@ async def admin_analytics_dashboard(request: Request):
     week_ago = now - timedelta(days=7)
     month_ago = now - timedelta(days=30)
     
-    # Basic counts
-    total_users = await db.users.count_documents({})
-    total_ads = await db.ads.count_documents({})
-    active_ads = await db.ads.count_documents({"status": "active"})
-    pending_ads = await db.ads.count_documents({"status": "pending"})
+    # Run all basic counts in parallel
+    total_users, total_ads, active_ads, pending_ads, total_reviews = await asyncio.gather(
+        db.users.count_documents({}),
+        db.ads.count_documents({}),
+        db.ads.count_documents({"status": "active"}),
+        db.ads.count_documents({"status": "pending"}),
+        db.reviews.count_documents({})
+    )
     
-    # New users today/week/month
-    new_users_today = await db.users.count_documents({"created_at": {"$gte": today_start.isoformat()}})
-    new_users_week = await db.users.count_documents({"created_at": {"$gte": week_ago.isoformat()}})
-    new_users_month = await db.users.count_documents({"created_at": {"$gte": month_ago.isoformat()}})
+    # New users/ads counts in parallel
+    new_users_today, new_users_week, new_users_month, new_ads_today, new_ads_week, new_ads_month = await asyncio.gather(
+        db.users.count_documents({"created_at": {"$gte": today_start.isoformat()}}),
+        db.users.count_documents({"created_at": {"$gte": week_ago.isoformat()}}),
+        db.users.count_documents({"created_at": {"$gte": month_ago.isoformat()}}),
+        db.ads.count_documents({"created_at": {"$gte": today_start.isoformat()}}),
+        db.ads.count_documents({"created_at": {"$gte": week_ago.isoformat()}}),
+        db.ads.count_documents({"created_at": {"$gte": month_ago.isoformat()}})
+    )
     
-    # New ads today/week/month
-    new_ads_today = await db.ads.count_documents({"created_at": {"$gte": today_start.isoformat()}})
-    new_ads_week = await db.ads.count_documents({"created_at": {"$gte": week_ago.isoformat()}})
-    new_ads_month = await db.ads.count_documents({"created_at": {"$gte": month_ago.isoformat()}})
-    
-    # Total views
+    # Total views and avg rating in parallel
     total_views_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$views"}}}]
-    views_result = await db.ads.aggregate(total_views_pipeline).to_list(1)
-    total_views = views_result[0]["total"] if views_result else 0
+    avg_rating_pipeline = [{"$group": {"_id": None, "avg": {"$avg": "$rating"}}}]
     
-    # Category distribution
+    views_result, avg_result = await asyncio.gather(
+        db.ads.aggregate(total_views_pipeline).to_list(1),
+        db.reviews.aggregate(avg_rating_pipeline).to_list(1)
+    )
+    total_views = views_result[0]["total"] if views_result else 0
+    avg_platform_rating = round(avg_result[0]["avg"], 2) if avg_result and avg_result[0].get("avg") else 0
+    
+    # Category and City distribution in parallel
     category_pipeline = [
         {"$match": {"status": "active"}},
         {"$group": {"_id": "$category_id", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}}
     ]
-    category_dist = await db.ads.aggregate(category_pipeline).to_list(20)
+    city_pipeline = [
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$city_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    
+    category_dist, city_dist, top_ads = await asyncio.gather(
+        db.ads.aggregate(category_pipeline).to_list(20),
+        db.ads.aggregate(city_pipeline).to_list(10),
+        db.ads.find({"status": "active"}, {"_id": 0, "ad_id": 1, "title": 1, "views": 1, "category_id": 1}).sort([("views", -1)]).limit(10).to_list(10)
+    )
+    
+    # Process distributions
     category_distribution = []
     for item in category_dist:
         cat = next((c for c in CATEGORIES if c["id"] == item["_id"]), None)
@@ -1961,14 +1983,6 @@ async def admin_analytics_dashboard(request: Request):
             "count": item["count"]
         })
     
-    # City distribution (top 10)
-    city_pipeline = [
-        {"$match": {"status": "active"}},
-        {"$group": {"_id": "$city_id", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 10}
-    ]
-    city_dist = await db.ads.aggregate(city_pipeline).to_list(10)
     city_distribution = []
     for item in city_dist:
         city = next((c for c in ROMANIAN_CITIES if c["id"] == item["_id"]), None)
@@ -1978,45 +1992,37 @@ async def admin_analytics_dashboard(request: Request):
             "count": item["count"]
         })
     
-    # Daily new ads (last 30 days)
-    daily_ads = []
-    for i in range(30):
-        day = now - timedelta(days=29-i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        count = await db.ads.count_documents({
-            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
-        })
-        daily_ads.append({
-            "date": day_start.strftime("%Y-%m-%d"),
-            "count": count
-        })
+    # Daily trends using aggregation (OPTIMIZED - single query instead of 30)
+    daily_ads_pipeline = [
+        {"$match": {"created_at": {"$gte": month_ago.isoformat()}}},
+        {"$addFields": {"date_only": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {"_id": "$date_only", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    daily_users_pipeline = [
+        {"$match": {"created_at": {"$gte": month_ago.isoformat()}}},
+        {"$addFields": {"date_only": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {"_id": "$date_only", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
     
-    # Daily new users (last 30 days)
+    daily_ads_result, daily_users_result = await asyncio.gather(
+        db.ads.aggregate(daily_ads_pipeline).to_list(31),
+        db.users.aggregate(daily_users_pipeline).to_list(31)
+    )
+    
+    # Convert to dict for quick lookup
+    ads_by_date = {d["_id"]: d["count"] for d in daily_ads_result}
+    users_by_date = {d["_id"]: d["count"] for d in daily_users_result}
+    
+    # Build 30-day arrays with zeros for missing days
+    daily_ads = []
     daily_users = []
     for i in range(30):
         day = now - timedelta(days=29-i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        count = await db.users.count_documents({
-            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
-        })
-        daily_users.append({
-            "date": day_start.strftime("%Y-%m-%d"),
-            "count": count
-        })
-    
-    # Top ads by views
-    top_ads = await db.ads.find(
-        {"status": "active"},
-        {"_id": 0, "ad_id": 1, "title": 1, "views": 1, "category_id": 1}
-    ).sort([("views", -1)]).limit(10).to_list(10)
-    
-    # Reviews stats
-    total_reviews = await db.reviews.count_documents({})
-    avg_rating_pipeline = [{"$group": {"_id": None, "avg": {"$avg": "$rating"}}}]
-    avg_result = await db.reviews.aggregate(avg_rating_pipeline).to_list(1)
-    avg_platform_rating = round(avg_result[0]["avg"], 2) if avg_result else 0
+        date_str = day.strftime("%Y-%m-%d")
+        daily_ads.append({"date": date_str, "count": ads_by_date.get(date_str, 0)})
+        daily_users.append({"date": date_str, "count": users_by_date.get(date_str, 0)})
     
     return {
         "overview": {
