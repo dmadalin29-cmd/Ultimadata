@@ -3099,6 +3099,136 @@ app.include_router(api_router)
 # Mount uploads directory under /api/uploads for proper routing through ingress
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
+# ==================== SEO ENDPOINTS ====================
+
+@api_router.get("/sitemap.xml")
+async def generate_sitemap():
+    """Generate dynamic XML sitemap for SEO"""
+    base_url = "https://x67digital.com"
+    
+    # Get all active ads
+    ads = await db.ads.find(
+        {"status": "active"},
+        {"_id": 0, "ad_id": 1, "updated_at": 1, "category_id": 1}
+    ).to_list(10000)
+    
+    xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    # Homepage - highest priority
+    xml_content += f'''  <url>
+    <loc>{base_url}</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>\n'''
+    
+    # Category pages
+    for cat in CATEGORIES:
+        xml_content += f'''  <url>
+    <loc>{base_url}/category/{cat["id"]}</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>\n'''
+    
+    # Static pages
+    static_pages = [
+        ("despre", "0.7", "monthly"),
+        ("termeni", "0.5", "monthly"),
+        ("confidentialitate", "0.5", "monthly"),
+        ("contact", "0.7", "monthly"),
+        ("cookies", "0.5", "monthly")
+    ]
+    for page, priority, freq in static_pages:
+        xml_content += f'''  <url>
+    <loc>{base_url}/{page}</loc>
+    <changefreq>{freq}</changefreq>
+    <priority>{priority}</priority>
+  </url>\n'''
+    
+    # Individual ads
+    for ad in ads:
+        lastmod = ad.get("updated_at", "")[:10] if ad.get("updated_at") else ""
+        xml_content += f'''  <url>
+    <loc>{base_url}/ad/{ad["ad_id"]}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>\n'''
+    
+    xml_content += '</urlset>'
+    
+    return Response(content=xml_content, media_type="application/xml")
+
+@api_router.get("/robots.txt")
+async def robots_txt():
+    """Generate robots.txt for SEO"""
+    content = """User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+Disallow: /messages
+Disallow: /favorites
+
+# Sitemap
+Sitemap: https://x67digital.com/api/sitemap.xml
+
+# Crawl-delay for politeness
+Crawl-delay: 1
+"""
+    return Response(content=content, media_type="text/plain")
+
+@api_router.get("/seo/meta/{page_type}")
+async def get_seo_meta(page_type: str, ad_id: str = None, category_id: str = None):
+    """Get SEO meta tags for different page types"""
+    base_url = "https://x67digital.com"
+    
+    # Default meta
+    meta = {
+        "title": "X67 Digital Media - Anunțuri Gratuite România | Mașini, Case, Electronice",
+        "description": "Cel mai mare site de anunțuri gratuite din România. Vinde și cumpără mașini second hand, apartamente, case, electronice, locuri de muncă. Anunțuri verificate!",
+        "keywords": "anunturi gratuite, masini second hand, apartamente de vanzare, case de vanzare, electronice, locuri de munca, romania, olx alternativa",
+        "og_image": f"{base_url}/og-image.png",
+        "canonical": base_url
+    }
+    
+    if page_type == "home":
+        pass  # Use default
+        
+    elif page_type == "category" and category_id:
+        cat = next((c for c in CATEGORIES if c["id"] == category_id), None)
+        if cat:
+            cat_keywords = {
+                "auto": "masini second hand, auto sh, autoturisme, masini ieftine, vanzari auto romania",
+                "imobiliare": "apartamente vanzare, case vanzare, terenuri, imobiliare romania, chirii",
+                "electronice": "electronice second hand, telefoane, laptopuri, tv, electrocasnice ieftine",
+                "locuri_munca": "locuri de munca, joburi romania, angajari, cariera, oferte munca",
+                "moda": "haine second hand, incaltaminte, accesorii, moda romania",
+                "servicii": "servicii romania, reparatii, curatenie, transport, instalatii",
+                "animale": "animale de companie, caini, pisici, accesorii animale",
+                "escorts": "escorte, companie, evenimente, intalniri"
+            }
+            meta["title"] = f"{cat['name']} - Anunțuri {cat['name']} România | X67 Digital"
+            meta["description"] = f"Anunțuri {cat['name'].lower()} din toată România. Găsește cele mai bune oferte de {cat['name'].lower()} pe X67 Digital Media."
+            meta["keywords"] = cat_keywords.get(category_id, f"{cat['name'].lower()}, anunturi, romania")
+            meta["canonical"] = f"{base_url}/category/{category_id}"
+            
+    elif page_type == "ad" and ad_id:
+        ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+        if ad:
+            cat = next((c for c in CATEGORIES if c["id"] == ad.get("category_id")), None)
+            city = next((c for c in ROMANIAN_CITIES if c["id"] == ad.get("city_id")), None)
+            
+            price_text = f"{ad.get('price', 0)} €" if ad.get('price') else "Preț negociabil"
+            meta["title"] = f"{ad.get('title', '')} - {price_text} | X67 Digital"
+            meta["description"] = f"{ad.get('description', '')[:160]}..."
+            meta["keywords"] = f"{ad.get('title', '').lower()}, {cat['name'].lower() if cat else ''}, {city['name'].lower() if city else ''}, anunturi"
+            meta["canonical"] = f"{base_url}/ad/{ad_id}"
+            if ad.get("images") and len(ad["images"]) > 0:
+                meta["og_image"] = ad["images"][0]
+    
+    return meta
+
 # CORS - specific origins for credentials
 CORS_ORIGINS = [
     "https://x67digital.com",
