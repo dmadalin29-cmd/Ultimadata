@@ -2464,6 +2464,15 @@ async def chatbot_respond(data: ChatMessage, request: Request):
     
     session_id = data.session_id or str(uuid.uuid4())
     
+    # Check if LLM key is configured
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not llm_key:
+        logger.error("EMERGENT_LLM_KEY not configured")
+        return {
+            "response": "Chatbot-ul nu este configurat momentan. Te rog să contactezi administratorul.",
+            "session_id": session_id
+        }
+    
     # Get conversation history from session
     history = await db.chat_sessions.find_one({"session_id": session_id})
     
@@ -2474,7 +2483,6 @@ async def chatbot_respond(data: ChatMessage, request: Request):
             initial_messages.append({"role": msg["role"], "content": msg["content"]})
     
     try:
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
         
         # Initialize LlmChat with session and system message
         llm_chat = LlmChat(
@@ -2566,9 +2574,11 @@ Reguli:
 
 Scrie doar descrierea, fără titlu sau alte adăugiri."""
 
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not llm_key:
+        raise HTTPException(status_code=503, detail="Serviciul AI nu este configurat")
+    
     try:
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
-        
         # Initialize LlmChat for description generation
         llm_chat = LlmChat(
             api_key=llm_key,
