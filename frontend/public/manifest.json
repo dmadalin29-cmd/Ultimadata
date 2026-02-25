@@ -1,0 +1,65 @@
+{
+  "name": "X67 Digital Media Groupe",
+  "short_name": "X67",
+  "description": "Anunțuri gratuite în România - Escorte, Imobiliare, Auto, Jobs și multe altele",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "ro",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "shopping", "social"],
+  "shortcuts": [
+    {
+      "name": "Adaugă Anunț",
+      "short_name": "Anunț Nou",
+      "description": "Publică un anunț gratuit",
+      "url": "/create-ad",
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Mesaje",
+      "short_name": "Mesaje",
+      "description": "Vezi conversațiile tale",
+      "url": "/messages",
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Favorite",
+      "short_name": "Favorite",
+      "description": "Anunțurile tale salvate",
+      "url": "/favorites",
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+Disallow: /messages
+Disallow: /favorites
+
+# Sitemap
+Sitemap: https://x67digital.com/api/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Google specific
+User-agent: Googlebot
+Allow: /
+
+# Bing specific
+User-agent: Bingbot
+Allow: /

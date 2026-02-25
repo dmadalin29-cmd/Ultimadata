@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050505">
+  <title>Offline - X67 Digital Media</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050505;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: bold;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #94A3B8;
+      font-size: 16px;
+      max-width: 400px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .retry-btn {
+      background: #3B82F6;
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .retry-btn:hover {
+      background: #2563EB;
+      transform: translateY(-2px);
+    }
+    .offline-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">X</div>
+  <div class="offline-icon">📡</div>
+  <h1>Ești offline</h1>
+  <p>Se pare că nu ai conexiune la internet. Verifică conexiunea și încearcă din nou.</p>
+  <button class="retry-btn" onclick="window.location.reload()">
+    Încearcă din nou
+  </button>
+</body>
+</html>

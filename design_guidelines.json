@@ -1,0 +1,129 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "X67 Digital Media Groupe",
+      "tone": "Ultra Modern, High-Contrast, Exclusive, Functional",
+      "archetype": "Midnight & Neon (Dark Mode Default)",
+      "core_values": ["Speed", "Discretion", "Premium", "Clarity"]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Outfit, sans-serif",
+        "body": "Manrope, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "scale": {
+        "h1": "text-5xl md:text-7xl font-bold tracking-tight",
+        "h2": "text-4xl md:text-5xl font-semibold tracking-tight",
+        "h3": "text-2xl md:text-3xl font-medium",
+        "body_lg": "text-lg leading-relaxed",
+        "body_base": "text-base leading-relaxed text-slate-400",
+        "caption": "text-sm text-slate-500 uppercase tracking-widest"
+      }
+    },
+    "colors": {
+      "palette": {
+        "background": "#050505",
+        "surface": "#0A0A0A",
+        "surface_highlight": "#121212",
+        "border": "#262626",
+        "primary": "#3B82F6",
+        "primary_foreground": "#FFFFFF",
+        "secondary": "#1E293B",
+        "accent_pink": "#D946EF",
+        "accent_green": "#10B981",
+        "text_main": "#F8FAFC",
+        "text_muted": "#94A3B8"
+      },
+      "usage": {
+        "body_bg": "bg-[#050505]",
+        "card_bg": "bg-[#0A0A0A] border border-[#262626]",
+        "primary_cta": "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]",
+        "boost_cta": "bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-[0_0_20px_rgba(217,70,239,0.4)]",
+        "success_badge": "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+      }
+    },
+    "layout": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "grid_system": {
+        "bento_categories": "grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6",
+        "ad_feed": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      },
+      "spacing": {
+        "section_py": "py-20 md:py-32",
+        "card_p": "p-6 md:p-8"
+      }
+    },
+    "components": {
+      "buttons": {
+        "default": "h-12 px-6 rounded-full font-medium transition-all duration-300 active:scale-95",
+        "ghost": "hover:bg-white/5 text-slate-300 hover:text-white"
+      },
+      "cards": {
+        "listing": "group relative overflow-hidden rounded-2xl bg-[#0A0A0A] border border-white/5 hover:border-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-900/10",
+        "boosted": "relative overflow-hidden rounded-2xl bg-[#0A0A0A] border border-fuchsia-500/30 shadow-[0_0_30px_rgba(217,70,239,0.15)]"
+      },
+      "inputs": {
+        "default": "bg-[#121212] border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-xl h-12 px-4 text-white placeholder:text-slate-600"
+      }
+    },
+    "visual_enhancers": {
+      "glassmorphism": "backdrop-blur-xl bg-black/40 border-b border-white/5",
+      "gradients": {
+        "hero_glow": "bg-gradient-to-tr from-blue-600/20 via-purple-600/10 to-transparent",
+        "text_gradient": "bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400"
+      },
+      "animations": {
+        "hover_lift": "transition-transform duration-300 hover:-translate-y-1",
+        "image_zoom": "group-hover:scale-105 transition-transform duration-700 ease-out"
+      }
+    }
+  },
+  "assets": {
+    "images": {
+      "categories": {
+        "cars": "https://images.unsplash.com/photo-1585756511089-4d495bb55a11",
+        "real_estate": "https://images.unsplash.com/photo-1680503146454-0fe569cef4eb",
+        "escorts": "https://images.unsplash.com/photo-1646510132660-949a5ff59d14",
+        "jobs": "https://images.unsplash.com/photo-1745970649957-b4b1f7fde4ea",
+        "services": "https://images.unsplash.com/photo-1760714132377-bfb0f6b3d892"
+      },
+      "banners": [
+        "https://images.unsplash.com/photo-1763926444192-08bba5ffdd46",
+        "https://images.unsplash.com/photo-1585756511089-4d495bb55a11"
+      ]
+    },
+    "icons": "lucide-react"
+  },
+  "instructions_to_main_agent": {
+    "general": [
+      "Implement a 'Midnight' dark theme by default. Do not use pure black #000000, use #050505.",
+      "Use 'Outfit' font for all headings and 'Manrope' for body text. Import them from Google Fonts.",
+      "Ensure all interactive elements have `data-testid` attributes.",
+      "Use Shadcn UI components but override their styles to match the 'Midnight & Neon' aesthetic defined in `colors`.",
+      "For the 'Escort' category, use the 'accent_pink' color (#D946EF) for badges and boost indicators.",
+      "For the 'Real Estate' category, use 'accent_green' (#10B981) for price tags.",
+      "The 'Boost' feature (Pay to appear first) must visually distinguish the card with a glowing border or a 'Featured' badge.",
+      "Rotating banners must have a smooth transition (fade or slide) and change every 4-5 seconds."
+    ],
+    "file_structure": {
+      "components": "Use .jsx extension for components.",
+      "pages": "Use .jsx extension for pages."
+    },
+    "specific_pages": {
+      "home": "Implement a Bento Grid layout for categories. Use a full-width rotating banner at the top.",
+      "create_ad": "Multi-step form with clear progress indicators. Step 1: Category, Step 2: Details, Step 3: Photos, Step 4: Payment.",
+      "ad_detail": "Large hero image gallery. 'Contact' button must be sticky on mobile."
+    }
+  },
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts. Use asymmetry.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) for headers and floating elements.",
+    "NEVER use AI assistant Emoji characters like 🤖🧠 etc.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Use `sonner` for toasts."
+  ]
+}
