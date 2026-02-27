@@ -112,6 +112,7 @@ export default function AdDetailPage() {
   const [topupLoading, setTopupLoading] = useState(false);
   const [referralCode, setReferralCode] = useState(null);
   const [referralCount, setReferralCount] = useState(0);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   useEffect(() => {
     fetchAd();
