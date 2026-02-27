@@ -255,6 +255,59 @@ export default function AdDetailPage() {
     navigate(`/messages?ad=${adId}&to=${ad.user_id}`);
   };
 
+  // Add to comparison
+  const handleAddToCompare = async () => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/compare/add`,
+        { ad_id: adId },
+        { withCredentials: true }
+      );
+      toast.success(`Adăugat la comparație (${response.data.count}/4)`);
+    } catch (error) {
+      if (error.response?.status === 400) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error("Eroare la adăugare");
+      }
+    }
+  };
+
+  // Submit offer
+  const handleSubmitOffer = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    
+    const price = parseFloat(offerPrice);
+    if (!price || price <= 0) {
+      toast.error("Introdu un preț valid");
+      return;
+    }
+    
+    setSubmittingOffer(true);
+    try {
+      await axios.post(
+        `${API_URL}/api/offers`,
+        {
+          ad_id: adId,
+          offered_price: price,
+          message: offerMessage || null
+        },
+        { withCredentials: true }
+      );
+      toast.success("Oferta a fost trimisă!");
+      setShowOfferDialog(false);
+      setOfferPrice("");
+      setOfferMessage("");
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Eroare la trimiterea ofertei");
+    } finally {
+      setSubmittingOffer(false);
+    }
+  };
+
   const handlePaidTopup = async () => {
     if (!user) {
       navigate("/auth");
