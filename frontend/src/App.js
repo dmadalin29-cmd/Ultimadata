@@ -21,6 +21,7 @@ import MessagesPage from "./pages/MessagesPage";
 import DashboardPage from "./pages/DashboardPage";
 import SellerProfilePage from "./pages/SellerProfilePage";
 import PriceAlertsPage from "./pages/PriceAlertsPage";
+import SavedSearchesPage from "./pages/SavedSearchesPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
