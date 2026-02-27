@@ -236,6 +236,14 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/verification"
+        element={
+          <ProtectedRoute>
+            <VerificationPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
