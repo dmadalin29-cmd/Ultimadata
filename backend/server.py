@@ -1740,7 +1740,7 @@ async def get_user_referral_code(request: Request):
 
 @api_router.post("/ads/{ad_id}/topup")
 async def topup_ad(ad_id: str, request: Request):
-    """TopUp an ad to appear at the top of its category"""
+    """TopUp an ad to appear at the top of its category - FREE for non-escorts, PAID for escorts"""
     user = await require_auth(request)
     
     ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
@@ -1751,7 +1751,14 @@ async def topup_ad(ad_id: str, request: Request):
     if ad["status"] != "active":
         raise HTTPException(status_code=400, detail="Ad must be active to topup")
     
-    # Check cooldown
+    # For ESCORTS category - require payment (10 RON)
+    if ad.get("category_id") == "escorts":
+        raise HTTPException(
+            status_code=402, 
+            detail="Pentru categoria Escorte, Top-Up costă 10 RON. Folosește plata cu cardul."
+        )
+    
+    # For other categories - FREE with cooldown
     last_topup = ad.get("last_topup")
     if last_topup:
         last_topup_time = datetime.fromisoformat(last_topup) if isinstance(last_topup, str) else last_topup
