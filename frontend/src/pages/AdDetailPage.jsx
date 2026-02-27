@@ -327,6 +327,17 @@ export default function AdDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#050505]" data-testid="ad-detail-page">
+      {/* Image Lightbox */}
+      {showLightbox && images.length > 0 && (
+        <ImageLightbox 
+          images={images}
+          currentIndex={currentImageIndex}
+          onClose={() => setShowLightbox(false)}
+          onNext={() => setCurrentImageIndex(i => (i + 1) % images.length)}
+          onPrev={() => setCurrentImageIndex(i => (i - 1 + images.length) % images.length)}
+        />
+      )}
+      
       <SEOHead 
         title={adSeoTitle}
         description={adSeoDescription}
