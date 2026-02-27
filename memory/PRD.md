@@ -28,36 +28,46 @@ Build a classified ads marketplace website (x67digital.com) with:
 
 ## Latest Updates (Feb 27, 2026)
 
-### CURRENT SESSION CHANGES:
+### SESSION 2 CHANGES (Latest):
 
-1. **Backend Deployment Fix** - Simplified `requirements.txt` to resolve Railway deployment dependency conflicts
-   - Removed all version pins
-   - Only top-level dependencies listed
-   - Ready for push to GitHub
-
-2. **Viva Wallet Top-Up Button for Escorts** - Added frontend UI for paid 10 RON TopUp
-   - New `handlePaidTopup` function in `AdDetailPage.jsx`
-   - Conditional UI: Shows paid TopUp (10 RON) for Escorts, free TopUp for other categories
-   - Redirects to Viva Wallet checkout on click
+1. **Cloudinary Integration** - All new image uploads go to Cloudinary for permanent storage
+   - Cloud name: dzrqifaet
+   - Images no longer lost on Railway redeploy
    
-3. **Webhook Enhancement** - Updated payment webhook to properly handle Escorts TopUp
-   - Now updates `topup_rank` when boost payment is completed
-   - Ensures paid ads appear at top of category listing
+2. **Dark Theme Fixed** - Forced dark mode across all pages
+   - Removed all `.light` theme CSS
+   - Added `!important` rules on body background
+   - Fixed `html class="dark"` in index.html
+   
+3. **PWA iOS Fixes** - Added safe-area support for iPhone notch
+   - Added `env(safe-area-inset-*)` padding
+   - Fixed touch targets for buttons (h-14 on mobile)
+   - Added `-webkit-overflow-scrolling: touch`
+   
+4. **CORS Fixed** - Changed from wildcard to specific origins
+   - Allowed: x67digital.com, www.x67digital.com, localhost:3000
+   
+5. **Health Endpoint** - Added `/api/health` for monitoring
 
-### PREVIOUS SESSION FEATURES (Feb 27, 2026):
-1. **Cookie Consent Banner** - GDPR compliant with personalization options
-2. **Theme Toggle Removed** - Site is now dark-only
-3. **FAQ Updated** - Reflects free ad posting, paid Top-Up for Escorts
-4. **Image Lightbox/Zoom** - Click on ad images to enlarge
-5. **Unique Views Tracking** - Views counted per unique IP per day (no refresh counting)
-6. **Fashion Category Image** - Updated to elegant runway image
-7. **Mobile Responsive** - Improved grid and spacing for all devices
-8. **PWA Install** - Installable on Android/iOS from browser
+6. **Docker Deployment** - Created Dockerfile for Railway
+   - Uses python:3.11-slim base image
+   - Properly installs dependencies
+
+### SESSION 1 CHANGES:
+1. **Viva Wallet Top-Up Button for Escorts** - 10 RON payment
+2. **Cookie Consent Banner** - GDPR compliant
+3. **Theme Toggle Removed** - Site is now dark-only
+4. **FAQ Updated** - Reflects free ad posting
+5. **Image Lightbox/Zoom** - Click on ad images to enlarge
+6. **Unique Views Tracking** - Views counted per unique IP
+7. **PWA Install** - Installable on Android/iOS
 
 ### Technical Changes:
-- New `ad_views` collection in MongoDB for IP tracking
-- New `/api/ads/{ad_id}/topup-paid` endpoint for Viva Wallet payments
-- Removed theme toggle from Header component
+- Cloudinary for image storage (permanent)
+- `ad_views` collection in MongoDB for IP tracking
+- `/api/ads/{ad_id}/topup-paid` endpoint for Viva Wallet
+- `/api/health` endpoint for monitoring
+- Dockerfile for Railway deployment
 - Added ImageLightbox component to AdDetailPage
 - Improved responsive grid classes (grid-cols-2 sm:grid-cols-2 lg:grid-cols-4)
 
