@@ -269,9 +269,32 @@ Build a classified ads marketplace website (x67digital.com) with:
   - Updated for FREE posting, TopUp info
 
 ### P1 (Next)
+- **iPhone PWA Layout Fix** - Buttons on auth page not easily tappable, layout incorrect when added to home screen
+- **Refactor `server.py`** - File has grown to 4500+ lines, needs to be split into separate routers (ads.py, users.py, chat.py, etc.)
 - Re-enable Viva Wallet payment system when user decides
 - Implement "Boost Ad" feature (ad appears at top of category for paid)
 - Implement "Promote Ad" feature (ad featured on homepage for paid)
+
+### P2 (Future Tasks)
+- **Blog & Ghiduri (Guides)** - Section for articles like "How to sell your car quickly"
+- **Stories/Povești de Succes** - Section for users to post success stories
+
+### P3 (Completed - Phase 4 - Feb 27, 2026)
+- **Seller Dashboard** ✅
+  - Overview stats (active ads, views, favorites, conversations)
+  - Offers management summary
+  - Rating display with stars
+  - Top performing ads
+- **Loyalty Program** ✅
+  - 4 levels: Bronze → Silver → Gold → Platinum
+  - Points system with daily bonus
+  - Leaderboard
+  - Benefits per level
+- **Referral System** ✅
+  - Unique referral codes
+  - Shareable links
+  - Points for referrals (+100 signup, +50 ad posted)
+  - Faster TopUp for referrers (40 min vs 60 min)
 
 ### P2 (Completed from Backlog - Feb 11, 2026)
 - **Favorites System** ✅
