@@ -28,6 +28,11 @@ import OffersPage from "./pages/OffersPage";
 import SellerDashboardPage from "./pages/SellerDashboardPage";
 import LoyaltyPage from "./pages/LoyaltyPage";
 import ReferralPage from "./pages/ReferralPage";
+import PromotePage from "./pages/PromotePage";
+import BlogPage from "./pages/BlogPage";
+import StoriesPage from "./pages/StoriesPage";
+import ForumPage from "./pages/ForumPage";
+import EscrowPage from "./pages/EscrowPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
