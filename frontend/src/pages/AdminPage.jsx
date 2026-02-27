@@ -1120,6 +1120,315 @@ function BannersManagement() {
   );
 }
 
+// Forum Moderation
+function ForumModeration() {
+  const [threads, setThreads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    fetchThreads();
+  }, []);
+
+  const fetchThreads = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/forum/threads`, { withCredentials: true });
+      setThreads(res.data.threads || []);
+    } catch (error) {
+      // Fallback to public endpoint
+      const res = await axios.get(`${API_URL}/api/forum/threads?limit=100`);
+      setThreads(res.data.threads || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (threadId) => {
+    if (!confirm("Sigur vrei să ștergi această discuție?")) return;
+    
+    try {
+      await axios.delete(`${API_URL}/api/forum/threads/${threadId}`, { withCredentials: true });
+      toast.success("Discuție ștearsă");
+      fetchThreads();
+    } catch (error) {
+      toast.error("Eroare la ștergere");
+    }
+  };
+
+  const handlePin = async (threadId, isPinned) => {
+    try {
+      await axios.put(`${API_URL}/api/admin/forum/threads/${threadId}/pin`, 
+        { is_pinned: !isPinned }, 
+        { withCredentials: true }
+      );
+      toast.success(isPinned ? "Thread unfixat" : "Thread fixat");
+      fetchThreads();
+    } catch (error) {
+      toast.error("Eroare");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Moderare Forum</h1>
+          <p className="text-slate-400">{threads.length} discuții</p>
+        </div>
+      </div>
+
+      <div className="bg-[#0A0A0A] border border-white/5 rounded-xl overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-white/5 hover:bg-transparent">
+              <TableHead className="text-slate-400">Titlu</TableHead>
+              <TableHead className="text-slate-400">Autor</TableHead>
+              <TableHead className="text-slate-400">Categorie</TableHead>
+              <TableHead className="text-slate-400">Răspunsuri</TableHead>
+              <TableHead className="text-slate-400">Status</TableHead>
+              <TableHead className="text-slate-400 text-right">Acțiuni</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {threads.map((thread) => (
+              <TableRow key={thread.thread_id} className="border-white/5">
+                <TableCell className="text-white font-medium">
+                  <div className="flex items-center gap-2">
+                    {thread.is_pinned && <Pin className="w-4 h-4 text-yellow-400" />}
+                    <span className="truncate max-w-[200px]">{thread.title}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-slate-400">{thread.user_name}</TableCell>
+                <TableCell className="text-slate-400">{thread.category}</TableCell>
+                <TableCell className="text-slate-400">{thread.reply_count || 0}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    thread.status === "active" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                  }`}>
+                    {thread.status}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={`w-8 h-8 ${thread.is_pinned ? "text-yellow-400" : "text-slate-400"}`}
+                      onClick={() => handlePin(thread.thread_id, thread.is_pinned)}
+                      title={thread.is_pinned ? "Unfixează" : "Fixează"}
+                    >
+                      <Pin className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      onClick={() => handleDelete(thread.thread_id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        
+        {threads.length === 0 && (
+          <div className="text-center py-12 text-slate-500">
+            Nu există discuții în forum
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Stories Moderation
+function StoriesModeration() {
+  const [stories, setStories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("pending");
+
+  useEffect(() => {
+    fetchStories();
+  }, [filter]);
+
+  const fetchStories = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/stories?status=${filter}`, { withCredentials: true });
+      setStories(res.data.stories || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (storyId) => {
+    try {
+      await axios.put(`${API_URL}/api/stories/${storyId}/status`, 
+        { status: "approved" }, 
+        { withCredentials: true }
+      );
+      toast.success("Poveste aprobată!");
+      fetchStories();
+    } catch (error) {
+      toast.error("Eroare la aprobare");
+    }
+  };
+
+  const handleReject = async (storyId) => {
+    try {
+      await axios.put(`${API_URL}/api/stories/${storyId}/status`, 
+        { status: "rejected" }, 
+        { withCredentials: true }
+      );
+      toast.success("Poveste respinsă");
+      fetchStories();
+    } catch (error) {
+      toast.error("Eroare");
+    }
+  };
+
+  const handleDelete = async (storyId) => {
+    if (!confirm("Sigur vrei să ștergi această poveste?")) return;
+    
+    try {
+      await axios.delete(`${API_URL}/api/admin/stories/${storyId}`, { withCredentials: true });
+      toast.success("Poveste ștearsă");
+      fetchStories();
+    } catch (error) {
+      toast.error("Eroare la ștergere");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Moderare Povești de Succes</h1>
+          <p className="text-slate-400">{stories.length} povești</p>
+        </div>
+        
+        <div className="flex gap-2">
+          {["pending", "approved", "rejected"].map((status) => (
+            <Button
+              key={status}
+              variant={filter === status ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter(status)}
+              className={filter === status ? "bg-blue-600" : "border-white/10 text-slate-400"}
+            >
+              {status === "pending" ? "În așteptare" : status === "approved" ? "Aprobate" : "Respinse"}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {stories.map((story) => (
+          <div key={story.story_id} className="bg-[#0A0A0A] border border-white/5 rounded-xl p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white">{story.title}</h3>
+                <p className="text-slate-500 text-sm">
+                  De: {story.user_name} • {new Date(story.created_at).toLocaleDateString("ro-RO")}
+                </p>
+              </div>
+              
+              <span className={`px-3 py-1 rounded-full text-xs ${
+                story.status === "pending" ? "bg-yellow-500/20 text-yellow-400" :
+                story.status === "approved" ? "bg-green-500/20 text-green-400" :
+                "bg-red-500/20 text-red-400"
+              }`}>
+                {story.status === "pending" ? "În așteptare" : story.status === "approved" ? "Aprobat" : "Respins"}
+              </span>
+            </div>
+            
+            {(story.sold_item || story.sold_price || story.days_to_sell) && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {story.sold_item && (
+                  <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-sm">
+                    {story.sold_item}
+                  </span>
+                )}
+                {story.sold_price && (
+                  <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-sm">
+                    {story.sold_price} €
+                  </span>
+                )}
+                {story.days_to_sell && (
+                  <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-sm">
+                    {story.days_to_sell} zile
+                  </span>
+                )}
+              </div>
+            )}
+            
+            <p className="text-slate-400 mb-4">{story.content}</p>
+            
+            <div className="flex items-center gap-2">
+              {story.status === "pending" && (
+                <>
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-500"
+                    onClick={() => handleApprove(story.story_id)}
+                  >
+                    <Check className="w-4 h-4 mr-1" />
+                    Aprobă
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    onClick={() => handleReject(story.story_id)}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Respinge
+                  </Button>
+                </>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-400 hover:bg-red-500/10"
+                onClick={() => handleDelete(story.story_id)}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Șterge
+              </Button>
+            </div>
+          </div>
+        ))}
+        
+        {stories.length === 0 && (
+          <div className="text-center py-12 text-slate-500 bg-[#0A0A0A] border border-white/5 rounded-xl">
+            Nu există povești {filter === "pending" ? "în așteptare" : filter === "approved" ? "aprobate" : "respinse"}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Main Admin Page
 export default function AdminPage() {
   const { user } = useAuth();
