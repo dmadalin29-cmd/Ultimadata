@@ -24,7 +24,9 @@ import {
   CreditCard,
   Image as ImageIcon,
   Sparkles,
-  Loader2
+  Loader2,
+  MapPin,
+  Search
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
