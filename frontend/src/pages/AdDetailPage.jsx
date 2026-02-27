@@ -125,6 +125,12 @@ export default function AdDetailPage() {
   const [referralCode, setReferralCode] = useState(null);
   const [referralCount, setReferralCount] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+  
+  // Compare & Offer states
+  const [showOfferDialog, setShowOfferDialog] = useState(false);
+  const [offerPrice, setOfferPrice] = useState("");
+  const [offerMessage, setOfferMessage] = useState("");
+  const [submittingOffer, setSubmittingOffer] = useState(false);
 
   useEffect(() => {
     fetchAd();
