@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, Eye, Clock, Zap, Star } from "lucide-react";
+import { MapPin, Eye, Clock, Zap, Star, ShieldCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ro } from "date-fns/locale";
 
@@ -18,8 +18,12 @@ export default function AdCard({ ad }) {
     is_boosted,
     is_promoted,
     user_rating,
-    user_reviews
+    user_reviews,
+    user_badges = []
   } = ad;
+
+  const isVerified = user_badges?.includes("verified_identity");
+  const isTopSeller = user_badges?.includes("top_seller");
 
   const formatPrice = () => {
     if (price_type === "free") return "Gratuit";
