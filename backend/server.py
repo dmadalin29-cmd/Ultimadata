@@ -3255,11 +3255,18 @@ app.include_router(api_router)
 # Mount uploads directory under /api/uploads for proper routing through ingress
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
-# CORS
+# CORS - specific origins for credentials support
+ALLOWED_ORIGINS = [
+    "https://x67digital.com",
+    "https://www.x67digital.com",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
