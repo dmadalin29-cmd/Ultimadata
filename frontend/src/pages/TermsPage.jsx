@@ -208,11 +208,11 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* Section 6 */}
+          {/* Section 8 */}
           <section className="bg-[#0A0A0A] rounded-2xl p-8 border border-white/5">
             <div className="flex items-center gap-3 mb-4">
               <Scale className="w-6 h-6 text-cyan-500" />
-              <h2 className="text-xl font-semibold text-white">6. Legea Aplicabilă</h2>
+              <h2 className="text-xl font-semibold text-white">8. Legea Aplicabilă</h2>
             </div>
             <div className="text-slate-400 space-y-4">
               <p>
