@@ -797,8 +797,10 @@ export default function CreateAdPage() {
                   <span className="text-white">{selectedCategory?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Oraș</span>
-                  <span className="text-white">{cities.find(c => c.id === formData.city_id)?.name}</span>
+                  <span className="text-slate-400">Locație</span>
+                  <span className="text-white">
+                    {formData.localitate}{formData.judet_code && `, ${judete.find(j => j.code === formData.judet_code)?.name || ''}`}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Titlu</span>
