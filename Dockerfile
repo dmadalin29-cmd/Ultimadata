@@ -13,7 +13,7 @@ COPY backend/requirements.txt ./requirements.txt
 COPY backend/ ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ -r requirements.txt
 
 # Expose port
 EXPOSE 8080
