@@ -28,16 +28,31 @@ Build a classified ads marketplace website (x67digital.com) with:
 
 ## Latest Updates (Feb 27, 2026)
 
-### Features Implemented:
+### CURRENT SESSION CHANGES:
+
+1. **Backend Deployment Fix** - Simplified `requirements.txt` to resolve Railway deployment dependency conflicts
+   - Removed all version pins
+   - Only top-level dependencies listed
+   - Ready for push to GitHub
+
+2. **Viva Wallet Top-Up Button for Escorts** - Added frontend UI for paid 10 RON TopUp
+   - New `handlePaidTopup` function in `AdDetailPage.jsx`
+   - Conditional UI: Shows paid TopUp (10 RON) for Escorts, free TopUp for other categories
+   - Redirects to Viva Wallet checkout on click
+   
+3. **Webhook Enhancement** - Updated payment webhook to properly handle Escorts TopUp
+   - Now updates `topup_rank` when boost payment is completed
+   - Ensures paid ads appear at top of category listing
+
+### PREVIOUS SESSION FEATURES (Feb 27, 2026):
 1. **Cookie Consent Banner** - GDPR compliant with personalization options
 2. **Theme Toggle Removed** - Site is now dark-only
 3. **FAQ Updated** - Reflects free ad posting, paid Top-Up for Escorts
 4. **Image Lightbox/Zoom** - Click on ad images to enlarge
 5. **Unique Views Tracking** - Views counted per unique IP per day (no refresh counting)
-6. **Escorts Top-Up Payment** - 10 RON via Viva Wallet (unlimited per day)
-7. **Fashion Category Image** - Updated to elegant runway image
-8. **Mobile Responsive** - Improved grid and spacing for all devices
-9. **PWA Install** - Installable on Android/iOS from browser
+6. **Fashion Category Image** - Updated to elegant runway image
+7. **Mobile Responsive** - Improved grid and spacing for all devices
+8. **PWA Install** - Installable on Android/iOS from browser
 
 ### Technical Changes:
 - New `ad_views` collection in MongoDB for IP tracking
