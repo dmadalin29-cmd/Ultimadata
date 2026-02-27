@@ -59,12 +59,6 @@ body {
     background-color: #050505;
     min-height: 100vh;
 }
-.light .border-white\/5 { border-color: rgba(0,0,0,0.05); }
-.light .border-white\/10 { border-color: rgba(0,0,0,0.1); }
-
-/* Theme-aware hover states */
-.light .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.03); }
-.light .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.05); }
 
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
@@ -74,41 +68,22 @@ code, pre {
     font-family: 'JetBrains Mono', monospace;
 }
 
-/* Custom scrollbar - Dark */
-.dark ::-webkit-scrollbar {
+/* Custom scrollbar */
+::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
-.dark ::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
     background: #0A0A0A;
 }
 
-.dark ::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
     background: #262626;
     border-radius: 4px;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-    background: #3B82F6;
-}
-
-/* Custom scrollbar - Light */
-.light ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.light ::-webkit-scrollbar-track {
-    background: #F1F5F9;
-}
-
-.light ::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
-    border-radius: 4px;
-}
-
-.light ::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
     background: #3B82F6;
 }
 
