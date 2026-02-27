@@ -120,13 +120,21 @@ const faqs = [
     ]
   },
   {
-    category: "Probleme Tehnice",
+    category: "Comunitate și Suport",
     icon: AlertCircle,
     color: "text-yellow-500",
     questions: [
       {
-        q: "Imaginile nu se încarcă. Ce pot face?",
-        a: "Verifică dimensiunea fișierelor (max 5MB) și formatul (JPG, PNG, WebP). Încearcă să ștergi cache-ul browserului sau folosește alt browser."
+        q: "Ce este Forumul Comunitate?",
+        a: "Forumul este un loc unde poți discuta cu alți utilizatori, cere sfaturi despre vânzări, și împărtăși experiențe. Accesează-l din meniul principal sau de pe /forum."
+      },
+      {
+        q: "Cum pot posta o poveste de succes?",
+        a: "Dacă ai vândut ceva cu succes pe platformă, poți împărtăși experiența ta în secțiunea \"Povești de Succes\". Completează formularul și povestea ta va fi publicată după aprobare."
+      },
+      {
+        q: "Unde găsesc ghiduri și sfaturi?",
+        a: "Avem o secțiune de Blog & Ghiduri cu articole utile precum \"Cum să vinzi mașina rapid\" sau \"Ghid pentru fotografii de anunț profesioniste\". Accesează /blog."
       },
       {
         q: "Pot instala X67 ca aplicație pe telefon?",
