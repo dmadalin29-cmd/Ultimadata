@@ -1581,11 +1581,15 @@ async def payment_webhook(request: Request):
                 {"$set": {"is_paid": True, "status": "pending"}}  # pending for admin approval
             )
         elif payment_type == "boost":
+            # For escorts TopUp paid - update topup_rank to push to top
+            now = datetime.now(timezone.utc)
             await db.ads.update_one(
                 {"ad_id": ad_id},
                 {"$set": {
                     "is_boosted": True,
-                    "boost_expires_at": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+                    "boost_expires_at": (now + timedelta(days=1)).isoformat(),
+                    "topup_rank": now.timestamp(),
+                    "last_topup": now.isoformat()
                 }}
             )
         elif payment_type == "promote":
