@@ -1350,7 +1350,7 @@ async def get_ads(
     if user_ids:
         users_cursor = db.users.find(
             {"user_id": {"$in": user_ids}},
-            {"_id": 0, "user_id": 1, "avg_rating": 1, "total_reviews": 1}
+            {"_id": 0, "user_id": 1, "avg_rating": 1, "total_reviews": 1, "badges": 1}
         )
         async for u in users_cursor:
             users_with_rating[u["user_id"]] = u
