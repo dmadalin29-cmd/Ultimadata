@@ -28,7 +28,10 @@ import {
   Download,
   Sun,
   Moon,
-  BellRing
+  BellRing,
+  Award,
+  Users,
+  TrendingUp
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -210,6 +213,31 @@ export default function Header() {
                   >
                     <BellRing className="w-4 h-4 mr-2" />
                     Alerte de Preț
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/seller-dashboard")}
+                    className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
+                    data-testid="seller-dashboard-menu-item"
+                  >
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Statistici Vânzător
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/loyalty")}
+                    className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
+                    data-testid="loyalty-menu-item"
+                  >
+                    <Award className="w-4 h-4 mr-2" />
+                    Puncte Loialitate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/referral")}
+                    className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
+                    data-testid="referral-menu-item"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Program Referral
                   </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem 
