@@ -211,3 +211,54 @@ code, pre {
         display: contents !important;
     }
 }
+
+/* PWA iOS Safe Area Support */
+@supports (padding: max(0px)) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+}
+
+/* iOS PWA Standalone Mode Fixes */
+@media all and (display-mode: standalone) {
+    body {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+    }
+    
+    html, body {
+        height: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Ensure buttons are tappable */
+    button, a, input, select, textarea {
+        -webkit-user-select: auto;
+        user-select: auto;
+        touch-action: manipulation;
+    }
+    
+    /* Fix for notch area */
+    .min-h-screen {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* Mobile touch improvements */
+button, a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Prevent zoom on input focus (iOS) */
+input, select, textarea {
+    font-size: 16px !important;
+}
+
