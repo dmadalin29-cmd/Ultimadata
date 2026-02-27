@@ -5812,7 +5812,8 @@ ALLOWED_ORIGINS = [
     "https://x67digital.com",
     "https://www.x67digital.com",
     "http://localhost:3000",
-    "http://127.0.0.1:3000"
+    "http://127.0.0.1:3000",
+    "https://local-classifieds-7.preview.emergentagent.com"
 ]
 
 app.add_middleware(
