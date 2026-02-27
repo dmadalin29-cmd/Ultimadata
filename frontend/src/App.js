@@ -194,6 +194,14 @@ function AppRouter() {
         }
       />
       <Route
+        path="/messages/:conversationId"
+        element={
+          <ProtectedRoute>
+            <MessagesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
