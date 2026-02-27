@@ -1272,11 +1272,26 @@ async def create_ad(request: Request):
     body = await request.json()
     
     category_id = body.get("category_id")
+    title = body.get("title", "")
+    description = body.get("description", "")
+    
+    # AI Verification for spam and quality
+    ai_result = await ai_verify_ad(title, description, category_id)
     
     # Auto-approval bot: All categories EXCEPT "escorts" are auto-approved
     # Escorts require manual admin approval
+    # Also send to review if AI flags issues
     is_escort_category = category_id == "escorts"
-    initial_status = "pending" if is_escort_category else "active"
+    ai_needs_review = ai_result.get("recommendation") == "review" or ai_result.get("spam_score", 0) > 60
+    ai_rejected = ai_result.get("recommendation") == "reject" or ai_result.get("spam_score", 0) > 85
+    
+    if ai_rejected:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Anunțul nu poate fi publicat: {ai_result.get('reason', 'Conținut necorespunzător detectat')}"
+        )
+    
+    initial_status = "pending" if (is_escort_category or ai_needs_review) else "active"
     
     ad_id = f"ad_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc)
