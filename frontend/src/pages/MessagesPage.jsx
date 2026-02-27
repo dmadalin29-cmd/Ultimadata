@@ -240,7 +240,7 @@ export default function MessagesPage() {
 
     try {
       const otherUserId = activeConversation.participants.find(p => p !== user.user_id);
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/api/messages`,
         {
           ad_id: activeConversation.ad_id,
@@ -249,6 +249,13 @@ export default function MessagesPage() {
         },
         { withCredentials: true }
       );
+      
+      // If this was a new conversation, redirect to it
+      if (newConversationData && response.data.conversation_id) {
+        setNewConversationData(null);
+        navigate(`/messages/${response.data.conversation_id}`, { replace: true });
+        fetchConversations();
+      }
       // Message will be added via WebSocket
     } catch (error) {
       toast.error("Eroare la trimiterea mesajului");
