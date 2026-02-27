@@ -642,6 +642,32 @@ export default function AdDetailPage() {
                   Trimite mesaj
                 </Button>
               )}
+              
+              {/* Compare & Offer Buttons (not for owner) */}
+              {!isOwner && (
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
+                    onClick={handleAddToCompare}
+                    data-testid="compare-btn"
+                  >
+                    <Scale className="w-4 h-4 mr-2" />
+                    Compară
+                  </Button>
+                  {ad.price > 0 && ad.price_type !== "free" && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                      onClick={() => setShowOfferDialog(true)}
+                      data-testid="make-offer-btn"
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Fă o ofertă
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {/* Boost/Promote - TopUp Section */}
               {isOwner && ad.status === "active" && (
