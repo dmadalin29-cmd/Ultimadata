@@ -191,6 +191,7 @@ function AppRouter() {
       <Route path="/termeni-si-conditii" element={<TermsPage />} />
       <Route path="/politica-confidentialitate" element={<PrivacyPage />} />
       <Route path="/intrebari-frecvente" element={<FAQPage />} />
+      <Route path="/map" element={<MapPage />} />
       <Route
         path="/favorites"
         element={
