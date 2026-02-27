@@ -246,6 +246,18 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/compare"
+        element={<ComparePage />}
+      />
+      <Route
+        path="/offers"
+        element={
+          <ProtectedRoute>
+            <OffersPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
