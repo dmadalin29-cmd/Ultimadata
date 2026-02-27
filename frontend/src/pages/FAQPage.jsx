@@ -51,21 +51,25 @@ const faqs = [
     ]
   },
   {
-    category: "Promovare și Top-Up",
+    category: "Promovare și Premium",
     icon: Zap,
     color: "text-fuchsia-500",
     questions: [
       {
-        q: "Ce înseamnă \"Top-Up\" sau \"Ridicare anunț\"?",
-        a: "Top-Up-ul (10 RON) este disponibil pentru categoria Escorte și face ca anunțul tău să apară primul în lista categoriei. Poți da top-up de câte ori dorești pe zi!"
+        q: "Ce opțiuni de promovare sunt disponibile?",
+        a: "Oferim mai multe opțiuni: TOP în Categorie (15 RON/săptămână) - anunțul tău apare primul în categorie; Featured Homepage (40 RON/săptămână) - anunțul apare pe pagina principală; și Vânzător Pro (99 RON/lună) - acces la toate funcționalitățile premium."
       },
       {
-        q: "Cum fac Top-Up la anunț?",
-        a: "Accesează anunțul tău și apasă butonul \"Top-Up\" sau \"Ridică anunțul\". Plata se face securizat prin Viva Wallet cu cardul."
+        q: "Ce include abonamentul Vânzător Pro?",
+        a: "Vânzător Pro include: anunțuri nelimitate, statistici avansate despre vizualizări și engagement, suport prioritar, TopUp fără timp de așteptare, badge verificat pe profil, și profil evidențiat în rezultate."
       },
       {
-        q: "Cât durează efectul Top-Up-ului?",
-        a: "Anunțul va apărea primul în listă până când alt utilizator face și el Top-Up. De aceea poți da Top-Up de mai multe ori pe zi pentru a rămâne în top!"
+        q: "Cum funcționează sistemul de loialitate?",
+        a: "Câștigi puncte pentru fiecare anunț postat, vânzare finalizată, review primit, și pentru referral-uri. Punctele te ajută să avansezi prin nivele (Bronze → Silver → Gold → Platinum), fiecare nivel oferind beneficii crescute."
+      },
+      {
+        q: "Ce este programul de referral?",
+        a: "Primești un cod unic de referral pe care îl poți distribui. Pentru fiecare utilizator nou care se înregistrează cu codul tău, primești 100 puncte. Când acesta postează primul anunț, primești încă 50 puncte bonus!"
       }
     ]
   },
