@@ -2676,8 +2676,501 @@ async def delete_saved_search(search_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Saved search not found")
     
     return {"message": "Căutarea a fost ștearsă"}
+
+# ===================== RECENTLY VIEWED & RECOMMENDATIONS =====================
+
+@api_router.post("/ads/{ad_id}/view")
+async def track_ad_view(ad_id: str, request: Request):
+    """Track ad view for recommendations"""
+    user = await get_current_user(request)
+    if not user:
+        return {"tracked": False}
+    
+    # Get ad details for categorization
+    ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0, "category_id": 1, "subcategory_id": 1, "city_id": 1, "price": 1})
+    if not ad:
+        return {"tracked": False}
+    
+    # Add to viewed_ads collection
+    view_doc = {
+        "user_id": user["user_id"],
+        "ad_id": ad_id,
+        "category_id": ad.get("category_id"),
+        "subcategory_id": ad.get("subcategory_id"),
+        "city_id": ad.get("city_id"),
+        "price": ad.get("price"),
+        "viewed_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Upsert - update if exists, insert if not
+    await db.viewed_ads.update_one(
+        {"user_id": user["user_id"], "ad_id": ad_id},
+        {"$set": view_doc},
+        upsert=True
+    )
+    
+    # Keep only last 100 viewed ads per user
+    views_count = await db.viewed_ads.count_documents({"user_id": user["user_id"]})
+    if views_count > 100:
+        oldest = await db.viewed_ads.find(
+            {"user_id": user["user_id"]}
+        ).sort([("viewed_at", 1)]).limit(views_count - 100).to_list(views_count - 100)
+        if oldest:
+            oldest_ids = [v["ad_id"] for v in oldest]
+            await db.viewed_ads.delete_many({"user_id": user["user_id"], "ad_id": {"$in": oldest_ids}})
+    
+    return {"tracked": True}
+
+@api_router.get("/ads/recently-viewed")
+async def get_recently_viewed(request: Request, limit: int = 10):
+    """Get user's recently viewed ads"""
+    user = await get_current_user(request)
+    if not user:
+        return {"ads": []}
+    
+    # Get viewed ad IDs
+    viewed = await db.viewed_ads.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0, "ad_id": 1}
+    ).sort([("viewed_at", -1)]).limit(limit).to_list(limit)
+    
+    ad_ids = [v["ad_id"] for v in viewed]
+    if not ad_ids:
+        return {"ads": []}
+    
+    # Get ad details
+    ads = await db.ads.find(
+        {"ad_id": {"$in": ad_ids}, "status": "active"},
+        {"_id": 0}
+    ).to_list(limit)
+    
+    # Sort by original view order
+    ads_dict = {ad["ad_id"]: ad for ad in ads}
+    sorted_ads = [ads_dict[aid] for aid in ad_ids if aid in ads_dict]
+    
+    return {"ads": sorted_ads}
+
+@api_router.get("/ads/recommendations")
+async def get_recommendations(request: Request, limit: int = 12):
+    """Get personalized ad recommendations based on viewing history"""
+    user = await get_current_user(request)
+    
+    if not user:
+        # Return popular ads for non-logged users
+        popular = await db.ads.find(
+            {"status": "active"},
+            {"_id": 0}
+        ).sort([("views", -1)]).limit(limit).to_list(limit)
+        return {"ads": popular, "type": "popular"}
+    
+    # Analyze user's viewing patterns
+    views = await db.viewed_ads.find(
+        {"user_id": user["user_id"]}
+    ).sort([("viewed_at", -1)]).limit(50).to_list(50)
+    
+    if not views:
+        # Return popular ads if no history
+        popular = await db.ads.find(
+            {"status": "active"},
+            {"_id": 0}
+        ).sort([("views", -1)]).limit(limit).to_list(limit)
+        return {"ads": popular, "type": "popular"}
+    
+    # Calculate preferences
+    category_counts = {}
+    city_counts = {}
+    price_sum = 0
+    price_count = 0
+    viewed_ad_ids = set()
+    
+    for v in views:
+        viewed_ad_ids.add(v["ad_id"])
+        if v.get("category_id"):
+            category_counts[v["category_id"]] = category_counts.get(v["category_id"], 0) + 1
+        if v.get("city_id"):
+            city_counts[v["city_id"]] = city_counts.get(v["city_id"], 0) + 1
+        if v.get("price"):
+            price_sum += v["price"]
+            price_count += 1
+    
+    # Get top categories and cities
+    top_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+    top_cities = sorted(city_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+    avg_price = price_sum / price_count if price_count > 0 else None
+    
+    # Build recommendation query
+    query = {
+        "status": "active",
+        "ad_id": {"$nin": list(viewed_ad_ids)}  # Exclude already viewed
+    }
+    
+    # Prefer user's top categories
+    if top_categories:
+        query["category_id"] = {"$in": [c[0] for c in top_categories]}
+    
+    # Get recommendations
+    recommendations = await db.ads.find(
+        query,
+        {"_id": 0}
+    ).sort([("created_at", -1), ("views", -1)]).limit(limit).to_list(limit)
+    
+    # If not enough, add popular ads
+    if len(recommendations) < limit:
+        remaining = limit - len(recommendations)
+        existing_ids = [r["ad_id"] for r in recommendations] + list(viewed_ad_ids)
+        more_ads = await db.ads.find(
+            {"status": "active", "ad_id": {"$nin": existing_ids}},
+            {"_id": 0}
+        ).sort([("views", -1)]).limit(remaining).to_list(remaining)
+        recommendations.extend(more_ads)
     
     return {
+        "ads": recommendations,
+        "type": "personalized",
+        "preferences": {
+            "top_categories": [c[0] for c in top_categories],
+            "top_cities": [c[0] for c in top_cities],
+            "avg_price_range": avg_price
+        }
+    }
+
+@api_router.get("/ads/{ad_id}/similar")
+async def get_similar_ads(ad_id: str, limit: int = 6):
+    """Get similar ads based on category, price, and location"""
+    ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    # Build similarity query
+    query = {
+        "status": "active",
+        "ad_id": {"$ne": ad_id},
+        "category_id": ad.get("category_id")
+    }
+    
+    # Add price range if available (±30%)
+    if ad.get("price"):
+        min_price = ad["price"] * 0.7
+        max_price = ad["price"] * 1.3
+        query["price"] = {"$gte": min_price, "$lte": max_price}
+    
+    # First try same city
+    city_query = {**query, "city_id": ad.get("city_id")} if ad.get("city_id") else query
+    similar = await db.ads.find(city_query, {"_id": 0}).limit(limit).to_list(limit)
+    
+    # If not enough, expand search
+    if len(similar) < limit:
+        remaining = limit - len(similar)
+        existing_ids = [s["ad_id"] for s in similar]
+        expanded_query = {**query, "ad_id": {"$nin": existing_ids + [ad_id]}}
+        more = await db.ads.find(expanded_query, {"_id": 0}).limit(remaining).to_list(remaining)
+        similar.extend(more)
+    
+    return {"ads": similar}
+
+# ===================== AD COMPARISON =====================
+
+@api_router.post("/compare/add")
+async def add_to_comparison(request: Request):
+    """Add an ad to comparison list (stored in user session)"""
+    user = await get_current_user(request)
+    body = await request.json()
+    ad_id = body.get("ad_id")
+    
+    if not ad_id:
+        raise HTTPException(status_code=400, detail="ad_id required")
+    
+    # Get or create comparison list
+    user_id = user["user_id"] if user else request.client.host
+    
+    comparison = await db.comparisons.find_one({"user_id": user_id})
+    if not comparison:
+        comparison = {
+            "user_id": user_id,
+            "ad_ids": [],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+    
+    # Max 4 ads to compare
+    if ad_id not in comparison["ad_ids"]:
+        if len(comparison["ad_ids"]) >= 4:
+            raise HTTPException(status_code=400, detail="Poți compara maxim 4 anunțuri")
+        comparison["ad_ids"].append(ad_id)
+    
+    await db.comparisons.update_one(
+        {"user_id": user_id},
+        {"$set": comparison},
+        upsert=True
+    )
+    
+    return {"ad_ids": comparison["ad_ids"], "count": len(comparison["ad_ids"])}
+
+@api_router.delete("/compare/remove/{ad_id}")
+async def remove_from_comparison(ad_id: str, request: Request):
+    """Remove an ad from comparison list"""
+    user = await get_current_user(request)
+    user_id = user["user_id"] if user else request.client.host
+    
+    comparison = await db.comparisons.find_one({"user_id": user_id})
+    if comparison and ad_id in comparison.get("ad_ids", []):
+        comparison["ad_ids"].remove(ad_id)
+        await db.comparisons.update_one(
+            {"user_id": user_id},
+            {"$set": {"ad_ids": comparison["ad_ids"]}}
+        )
+    
+    return {"ad_ids": comparison.get("ad_ids", []) if comparison else [], "count": len(comparison.get("ad_ids", [])) if comparison else 0}
+
+@api_router.get("/compare")
+async def get_comparison(request: Request):
+    """Get comparison list with full ad details"""
+    user = await get_current_user(request)
+    user_id = user["user_id"] if user else request.client.host
+    
+    comparison = await db.comparisons.find_one({"user_id": user_id})
+    if not comparison or not comparison.get("ad_ids"):
+        return {"ads": [], "count": 0}
+    
+    # Get full ad details
+    ads = await db.ads.find(
+        {"ad_id": {"$in": comparison["ad_ids"]}},
+        {"_id": 0}
+    ).to_list(4)
+    
+    # Sort by original order
+    ads_dict = {ad["ad_id"]: ad for ad in ads}
+    sorted_ads = [ads_dict[aid] for aid in comparison["ad_ids"] if aid in ads_dict]
+    
+    return {"ads": sorted_ads, "count": len(sorted_ads)}
+
+@api_router.delete("/compare/clear")
+async def clear_comparison(request: Request):
+    """Clear comparison list"""
+    user = await get_current_user(request)
+    user_id = user["user_id"] if user else request.client.host
+    
+    await db.comparisons.delete_one({"user_id": user_id})
+    return {"message": "Comparison cleared"}
+
+# ===================== PRICE NEGOTIATION / OFFERS =====================
+
+class OfferCreate(BaseModel):
+    ad_id: str
+    offered_price: float
+    message: Optional[str] = None
+
+@api_router.post("/offers")
+async def create_offer(data: OfferCreate, request: Request):
+    """Create a price offer on an ad"""
+    user = await require_auth(request)
+    
+    # Get ad details
+    ad = await db.ads.find_one({"ad_id": data.ad_id}, {"_id": 0})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Anunțul nu a fost găsit")
+    
+    if ad["status"] != "active":
+        raise HTTPException(status_code=400, detail="Anunțul nu mai este activ")
+    
+    if ad["user_id"] == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Nu poți face oferte pe propriile anunțuri")
+    
+    # Check for existing pending offer
+    existing = await db.offers.find_one({
+        "ad_id": data.ad_id,
+        "buyer_id": user["user_id"],
+        "status": "pending"
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Ai deja o ofertă în așteptare pentru acest anunț")
+    
+    offer_id = f"offer_{uuid.uuid4().hex[:12]}"
+    offer_doc = {
+        "offer_id": offer_id,
+        "ad_id": data.ad_id,
+        "ad_title": ad.get("title"),
+        "ad_price": ad.get("price"),
+        "buyer_id": user["user_id"],
+        "buyer_name": user.get("name"),
+        "seller_id": ad["user_id"],
+        "offered_price": data.offered_price,
+        "message": data.message,
+        "status": "pending",  # pending, accepted, rejected, countered, expired
+        "counter_price": None,
+        "counter_message": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "responded_at": None,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+    }
+    
+    await db.offers.insert_one(offer_doc)
+    
+    # Notify seller via WebSocket if online
+    await ws_manager.send_personal_message({
+        "type": "new_offer",
+        "offer": {
+            "offer_id": offer_id,
+            "ad_title": ad.get("title"),
+            "offered_price": data.offered_price,
+            "buyer_name": user.get("name")
+        }
+    }, ad["user_id"])
+    
+    return {"offer_id": offer_id, "message": "Oferta a fost trimisă!"}
+
+@api_router.get("/offers/sent")
+async def get_sent_offers(request: Request, status: str = "all"):
+    """Get offers sent by current user"""
+    user = await require_auth(request)
+    
+    query = {"buyer_id": user["user_id"]}
+    if status != "all":
+        query["status"] = status
+    
+    offers = await db.offers.find(query, {"_id": 0}).sort([("created_at", -1)]).to_list(50)
+    return {"offers": offers}
+
+@api_router.get("/offers/received")
+async def get_received_offers(request: Request, status: str = "all"):
+    """Get offers received on user's ads"""
+    user = await require_auth(request)
+    
+    query = {"seller_id": user["user_id"]}
+    if status != "all":
+        query["status"] = status
+    
+    offers = await db.offers.find(query, {"_id": 0}).sort([("created_at", -1)]).to_list(50)
+    return {"offers": offers}
+
+@api_router.post("/offers/{offer_id}/accept")
+async def accept_offer(offer_id: str, request: Request):
+    """Accept a price offer"""
+    user = await require_auth(request)
+    
+    offer = await db.offers.find_one({"offer_id": offer_id, "seller_id": user["user_id"]})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta nu a fost găsită")
+    
+    if offer["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Oferta nu mai poate fi acceptată")
+    
+    # Update offer
+    await db.offers.update_one(
+        {"offer_id": offer_id},
+        {"$set": {
+            "status": "accepted",
+            "responded_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify buyer
+    await ws_manager.send_personal_message({
+        "type": "offer_accepted",
+        "offer_id": offer_id,
+        "ad_title": offer.get("ad_title"),
+        "accepted_price": offer["offered_price"]
+    }, offer["buyer_id"])
+    
+    # Create or get conversation for further communication
+    return {"message": "Oferta a fost acceptată!", "accepted_price": offer["offered_price"]}
+
+@api_router.post("/offers/{offer_id}/reject")
+async def reject_offer(offer_id: str, request: Request):
+    """Reject a price offer"""
+    user = await require_auth(request)
+    
+    offer = await db.offers.find_one({"offer_id": offer_id, "seller_id": user["user_id"]})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta nu a fost găsită")
+    
+    if offer["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Oferta nu mai poate fi respinsă")
+    
+    await db.offers.update_one(
+        {"offer_id": offer_id},
+        {"$set": {
+            "status": "rejected",
+            "responded_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify buyer
+    await ws_manager.send_personal_message({
+        "type": "offer_rejected",
+        "offer_id": offer_id,
+        "ad_title": offer.get("ad_title")
+    }, offer["buyer_id"])
+    
+    return {"message": "Oferta a fost respinsă"}
+
+@api_router.post("/offers/{offer_id}/counter")
+async def counter_offer(offer_id: str, request: Request):
+    """Make a counter offer"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    counter_price = body.get("counter_price")
+    counter_message = body.get("message")
+    
+    if not counter_price:
+        raise HTTPException(status_code=400, detail="Prețul contra-ofertei este obligatoriu")
+    
+    offer = await db.offers.find_one({"offer_id": offer_id, "seller_id": user["user_id"]})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta nu a fost găsită")
+    
+    if offer["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Nu mai poți face contra-ofertă")
+    
+    await db.offers.update_one(
+        {"offer_id": offer_id},
+        {"$set": {
+            "status": "countered",
+            "counter_price": counter_price,
+            "counter_message": counter_message,
+            "responded_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify buyer
+    await ws_manager.send_personal_message({
+        "type": "counter_offer",
+        "offer_id": offer_id,
+        "ad_title": offer.get("ad_title"),
+        "counter_price": counter_price
+    }, offer["buyer_id"])
+    
+    return {"message": "Contra-oferta a fost trimisă!", "counter_price": counter_price}
+
+@api_router.post("/offers/{offer_id}/accept-counter")
+async def accept_counter_offer(offer_id: str, request: Request):
+    """Buyer accepts a counter offer"""
+    user = await require_auth(request)
+    
+    offer = await db.offers.find_one({"offer_id": offer_id, "buyer_id": user["user_id"]})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta nu a fost găsită")
+    
+    if offer["status"] != "countered":
+        raise HTTPException(status_code=400, detail="Nu există contra-ofertă de acceptat")
+    
+    await db.offers.update_one(
+        {"offer_id": offer_id},
+        {"$set": {
+            "status": "accepted",
+            "responded_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify seller
+    await ws_manager.send_personal_message({
+        "type": "counter_accepted",
+        "offer_id": offer_id,
+        "ad_title": offer.get("ad_title"),
+        "final_price": offer["counter_price"]
+    }, offer["seller_id"])
+    
+    return {"message": "Ai acceptat contra-oferta!", "final_price": offer["counter_price"]}
         "favorites": result,
         "total": total,
         "page": page,
