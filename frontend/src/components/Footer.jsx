@@ -83,6 +83,21 @@ export default function Footer() {
                   Întrebări Frecvente
                 </Link>
               </li>
+              <li>
+                <Link to="/blog" className="text-slate-400 hover:text-white transition-colors text-sm">
+                  Blog & Ghiduri
+                </Link>
+              </li>
+              <li>
+                <Link to="/stories" className="text-slate-400 hover:text-white transition-colors text-sm">
+                  Povești de Succes
+                </Link>
+              </li>
+              <li>
+                <Link to="/forum" className="text-slate-400 hover:text-white transition-colors text-sm">
+                  Forum Comunitate
+                </Link>
+              </li>
             </ul>
           </div>
 
