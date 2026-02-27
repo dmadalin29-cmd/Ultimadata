@@ -5062,6 +5062,553 @@ async def admin_delete_city(city_id: str, request: Request):
     await db.managed_cities.delete_one({"id": city_id})
     return {"message": "City deleted"}
 
+# ===================== BLOG / GUIDES SYSTEM =====================
+
+@api_router.get("/blog/posts")
+async def get_blog_posts(
+    category: Optional[str] = None,
+    page: int = 1,
+    limit: int = 10
+):
+    """Get blog posts / guides"""
+    query = {"status": "published"}
+    if category:
+        query["category"] = category
+    
+    skip = (page - 1) * limit
+    posts = await db.blog_posts.find(query, {"_id": 0}).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    total = await db.blog_posts.count_documents(query)
+    
+    return {"posts": posts, "total": total, "page": page, "pages": (total + limit - 1) // limit}
+
+@api_router.get("/blog/posts/{post_id}")
+async def get_blog_post(post_id: str):
+    """Get single blog post"""
+    post = await db.blog_posts.find_one({"post_id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Increment views
+    await db.blog_posts.update_one({"post_id": post_id}, {"$inc": {"views": 1}})
+    
+    return post
+
+@api_router.post("/blog/posts")
+async def create_blog_post(request: Request):
+    """Create blog post (admin only)"""
+    user = await require_admin(request)
+    body = await request.json()
+    
+    post_id = f"post_{uuid.uuid4().hex[:12]}"
+    
+    post_doc = {
+        "post_id": post_id,
+        "title": body.get("title"),
+        "slug": body.get("slug") or body.get("title", "").lower().replace(" ", "-")[:50],
+        "content": body.get("content"),
+        "excerpt": body.get("excerpt") or body.get("content", "")[:200],
+        "category": body.get("category", "general"),  # guides, tips, news
+        "cover_image": body.get("cover_image"),
+        "author_id": user["user_id"],
+        "author_name": user["name"],
+        "status": body.get("status", "published"),
+        "views": 0,
+        "tags": body.get("tags", []),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.blog_posts.insert_one(post_doc)
+    return {"post_id": post_id, "message": "Post created successfully"}
+
+@api_router.put("/blog/posts/{post_id}")
+async def update_blog_post(post_id: str, request: Request):
+    """Update blog post (admin only)"""
+    await require_admin(request)
+    body = await request.json()
+    
+    update_fields = {k: v for k, v in body.items() if k in ["title", "content", "excerpt", "category", "cover_image", "status", "tags"]}
+    update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.blog_posts.update_one({"post_id": post_id}, {"$set": update_fields})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    return {"message": "Post updated"}
+
+@api_router.delete("/blog/posts/{post_id}")
+async def delete_blog_post(post_id: str, request: Request):
+    """Delete blog post (admin only)"""
+    await require_admin(request)
+    await db.blog_posts.delete_one({"post_id": post_id})
+    return {"message": "Post deleted"}
+
+@api_router.get("/blog/categories")
+async def get_blog_categories():
+    """Get blog categories"""
+    return {
+        "categories": [
+            {"id": "guides", "name": "Ghiduri", "icon": "📚"},
+            {"id": "tips", "name": "Sfaturi", "icon": "💡"},
+            {"id": "news", "name": "Noutăți", "icon": "📰"},
+            {"id": "success", "name": "Povești de Succes", "icon": "🏆"}
+        ]
+    }
+
+# ===================== SUCCESS STORIES =====================
+
+@api_router.get("/stories")
+async def get_success_stories(page: int = 1, limit: int = 10):
+    """Get success stories"""
+    query = {"status": "approved"}
+    skip = (page - 1) * limit
+    
+    stories = await db.success_stories.find(query, {"_id": 0}).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    total = await db.success_stories.count_documents(query)
+    
+    return {"stories": stories, "total": total, "page": page, "pages": (total + limit - 1) // limit}
+
+@api_router.get("/stories/{story_id}")
+async def get_success_story(story_id: str):
+    """Get single success story"""
+    story = await db.success_stories.find_one({"story_id": story_id}, {"_id": 0})
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+    return story
+
+@api_router.post("/stories")
+async def create_success_story(request: Request):
+    """Submit a success story"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    story_id = f"story_{uuid.uuid4().hex[:12]}"
+    
+    story_doc = {
+        "story_id": story_id,
+        "user_id": user["user_id"],
+        "user_name": user["name"],
+        "user_picture": user.get("picture"),
+        "title": body.get("title"),
+        "content": body.get("content"),
+        "category": body.get("category"),  # auto, imobiliare, etc.
+        "sold_item": body.get("sold_item"),
+        "sold_price": body.get("sold_price"),
+        "days_to_sell": body.get("days_to_sell"),
+        "images": body.get("images", []),
+        "status": "pending",  # pending, approved, rejected
+        "likes": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.success_stories.insert_one(story_doc)
+    return {"story_id": story_id, "message": "Povestea ta a fost trimisă și așteaptă aprobarea."}
+
+@api_router.post("/stories/{story_id}/like")
+async def like_story(story_id: str, request: Request):
+    """Like a success story"""
+    user = await require_auth(request)
+    
+    # Check if already liked
+    existing = await db.story_likes.find_one({"story_id": story_id, "user_id": user["user_id"]})
+    if existing:
+        # Unlike
+        await db.story_likes.delete_one({"story_id": story_id, "user_id": user["user_id"]})
+        await db.success_stories.update_one({"story_id": story_id}, {"$inc": {"likes": -1}})
+        return {"liked": False}
+    else:
+        # Like
+        await db.story_likes.insert_one({
+            "story_id": story_id,
+            "user_id": user["user_id"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.success_stories.update_one({"story_id": story_id}, {"$inc": {"likes": 1}})
+        return {"liked": True}
+
+@api_router.put("/stories/{story_id}/status")
+async def update_story_status(story_id: str, request: Request):
+    """Approve/reject story (admin only)"""
+    await require_admin(request)
+    body = await request.json()
+    
+    status = body.get("status")  # approved, rejected
+    if status not in ["approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    await db.success_stories.update_one({"story_id": story_id}, {"$set": {"status": status}})
+    return {"message": f"Story {status}"}
+
+# ===================== COMMUNITY FORUM =====================
+
+@api_router.get("/forum/categories")
+async def get_forum_categories():
+    """Get forum categories"""
+    return {
+        "categories": [
+            {"id": "general", "name": "Discuții Generale", "icon": "💬", "description": "Orice subiect legat de vânzări și cumpărări"},
+            {"id": "auto", "name": "Auto & Moto", "icon": "🚗", "description": "Discuții despre mașini și motociclete"},
+            {"id": "imobiliare", "name": "Imobiliare", "icon": "🏠", "description": "Sfaturi pentru vânzare/cumpărare proprietăți"},
+            {"id": "electronice", "name": "Electronice", "icon": "📱", "description": "Gadgeturi și tehnologie"},
+            {"id": "tips", "name": "Sfaturi & Trucuri", "icon": "💡", "description": "Cum să vinzi mai rapid"},
+            {"id": "support", "name": "Suport", "icon": "🆘", "description": "Întrebări despre platformă"}
+        ]
+    }
+
+@api_router.get("/forum/threads")
+async def get_forum_threads(
+    category: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20
+):
+    """Get forum threads"""
+    query = {"status": "active"}
+    if category:
+        query["category"] = category
+    
+    skip = (page - 1) * limit
+    threads = await db.forum_threads.find(query, {"_id": 0}).sort([("is_pinned", -1), ("last_reply_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    total = await db.forum_threads.count_documents(query)
+    
+    return {"threads": threads, "total": total, "page": page, "pages": (total + limit - 1) // limit}
+
+@api_router.get("/forum/threads/{thread_id}")
+async def get_forum_thread(thread_id: str):
+    """Get forum thread with replies"""
+    thread = await db.forum_threads.find_one({"thread_id": thread_id}, {"_id": 0})
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    
+    # Increment views
+    await db.forum_threads.update_one({"thread_id": thread_id}, {"$inc": {"views": 1}})
+    
+    # Get replies
+    replies = await db.forum_replies.find({"thread_id": thread_id}, {"_id": 0}).sort([("created_at", 1)]).to_list(100)
+    
+    thread["replies"] = replies
+    return thread
+
+@api_router.post("/forum/threads")
+async def create_forum_thread(request: Request):
+    """Create forum thread"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    thread_id = f"thread_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    thread_doc = {
+        "thread_id": thread_id,
+        "user_id": user["user_id"],
+        "user_name": user["name"],
+        "user_picture": user.get("picture"),
+        "title": body.get("title"),
+        "content": body.get("content"),
+        "category": body.get("category", "general"),
+        "status": "active",
+        "is_pinned": False,
+        "views": 0,
+        "reply_count": 0,
+        "last_reply_at": now,
+        "created_at": now
+    }
+    
+    await db.forum_threads.insert_one(thread_doc)
+    return {"thread_id": thread_id, "message": "Thread created"}
+
+@api_router.post("/forum/threads/{thread_id}/reply")
+async def reply_to_thread(thread_id: str, request: Request):
+    """Reply to forum thread"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    # Check thread exists
+    thread = await db.forum_threads.find_one({"thread_id": thread_id})
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    
+    reply_id = f"reply_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    reply_doc = {
+        "reply_id": reply_id,
+        "thread_id": thread_id,
+        "user_id": user["user_id"],
+        "user_name": user["name"],
+        "user_picture": user.get("picture"),
+        "content": body.get("content"),
+        "likes": 0,
+        "created_at": now
+    }
+    
+    await db.forum_replies.insert_one(reply_doc)
+    
+    # Update thread
+    await db.forum_threads.update_one(
+        {"thread_id": thread_id},
+        {"$inc": {"reply_count": 1}, "$set": {"last_reply_at": now}}
+    )
+    
+    return {"reply_id": reply_id, "message": "Reply posted"}
+
+@api_router.delete("/forum/threads/{thread_id}")
+async def delete_forum_thread(thread_id: str, request: Request):
+    """Delete forum thread (owner or admin)"""
+    user = await require_auth(request)
+    
+    thread = await db.forum_threads.find_one({"thread_id": thread_id})
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    
+    if thread["user_id"] != user["user_id"] and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    await db.forum_threads.delete_one({"thread_id": thread_id})
+    await db.forum_replies.delete_many({"thread_id": thread_id})
+    
+    return {"message": "Thread deleted"}
+
+# ===================== EXTERNAL AD BANNERS =====================
+
+@api_router.get("/ad-banners")
+async def get_ad_banners(position: Optional[str] = None):
+    """Get external advertisement banners"""
+    query = {"status": "active"}
+    if position:
+        query["position"] = position
+    
+    now = datetime.now(timezone.utc)
+    query["$or"] = [
+        {"expires_at": None},
+        {"expires_at": {"$gt": now.isoformat()}}
+    ]
+    
+    banners = await db.ad_banners.find(query, {"_id": 0}).to_list(50)
+    
+    # Track impressions
+    for banner in banners:
+        await db.ad_banners.update_one(
+            {"banner_id": banner["banner_id"]},
+            {"$inc": {"impressions": 1}}
+        )
+    
+    return {"banners": banners}
+
+@api_router.post("/ad-banners/{banner_id}/click")
+async def track_banner_click(banner_id: str):
+    """Track banner click"""
+    await db.ad_banners.update_one(
+        {"banner_id": banner_id},
+        {"$inc": {"clicks": 1}}
+    )
+    return {"tracked": True}
+
+@api_router.post("/ad-banners")
+async def create_ad_banner(request: Request):
+    """Create ad banner (admin only)"""
+    await require_admin(request)
+    body = await request.json()
+    
+    banner_id = f"adbanner_{uuid.uuid4().hex[:12]}"
+    
+    banner_doc = {
+        "banner_id": banner_id,
+        "title": body.get("title"),
+        "image_url": body.get("image_url"),
+        "link_url": body.get("link_url"),
+        "position": body.get("position", "sidebar"),  # sidebar, header, footer, between_ads
+        "advertiser": body.get("advertiser"),
+        "price_per_month": body.get("price_per_month", 0),
+        "status": body.get("status", "active"),
+        "impressions": 0,
+        "clicks": 0,
+        "starts_at": body.get("starts_at", datetime.now(timezone.utc).isoformat()),
+        "expires_at": body.get("expires_at"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.ad_banners.insert_one(banner_doc)
+    return {"banner_id": banner_id, "message": "Ad banner created"}
+
+@api_router.get("/ad-banners/admin")
+async def get_all_ad_banners(request: Request):
+    """Get all ad banners for admin"""
+    await require_admin(request)
+    banners = await db.ad_banners.find({}, {"_id": 0}).sort([("created_at", -1)]).to_list(100)
+    return {"banners": banners}
+
+@api_router.put("/ad-banners/{banner_id}")
+async def update_ad_banner(banner_id: str, request: Request):
+    """Update ad banner (admin only)"""
+    await require_admin(request)
+    body = await request.json()
+    
+    update_fields = {k: v for k, v in body.items() if k in ["title", "image_url", "link_url", "position", "advertiser", "price_per_month", "status", "expires_at"]}
+    
+    await db.ad_banners.update_one({"banner_id": banner_id}, {"$set": update_fields})
+    return {"message": "Ad banner updated"}
+
+@api_router.delete("/ad-banners/{banner_id}")
+async def delete_ad_banner(banner_id: str, request: Request):
+    """Delete ad banner (admin only)"""
+    await require_admin(request)
+    await db.ad_banners.delete_one({"banner_id": banner_id})
+    return {"message": "Ad banner deleted"}
+
+# ===================== ESCROW / SECURE PAYMENT SYSTEM =====================
+
+@api_router.post("/escrow/create")
+async def create_escrow(request: Request):
+    """Create escrow transaction for secure payment"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    ad_id = body.get("ad_id")
+    amount = body.get("amount")
+    
+    # Verify ad exists
+    ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    if ad["user_id"] == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Nu poți cumpăra propriul anunț")
+    
+    escrow_id = f"escrow_{uuid.uuid4().hex[:12]}"
+    commission = int(amount * 0.03)  # 3% commission
+    
+    escrow_doc = {
+        "escrow_id": escrow_id,
+        "ad_id": ad_id,
+        "ad_title": ad.get("title"),
+        "buyer_id": user["user_id"],
+        "buyer_name": user["name"],
+        "seller_id": ad["user_id"],
+        "amount": amount,
+        "commission": commission,
+        "total_amount": amount + commission,
+        "status": "pending",  # pending, paid, delivered, completed, disputed, refunded
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.escrow_transactions.insert_one(escrow_doc)
+    
+    # Create Viva payment
+    try:
+        access_token = await get_viva_access_token()
+        
+        order_payload = {
+            "amount": (amount + commission) * 100,  # Convert to cents
+            "customerTrns": f"X67 Escrow - {ad.get('title', '')[:30]}",
+            "customer": {
+                "email": user["email"],
+                "fullName": user["name"],
+                "requestLang": "ro"
+            },
+            "sourceCode": VIVA_SOURCE_CODE,
+            "merchantTrns": json.dumps({
+                "escrow_id": escrow_id,
+                "payment_type": "escrow"
+            })
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{VIVA_API_BASE}/checkout/v2/orders",
+                json=order_payload,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=502, detail="Payment service error")
+            
+            data = response.json()
+        
+        order_code = data.get("orderCode")
+        
+        await db.escrow_transactions.update_one(
+            {"escrow_id": escrow_id},
+            {"$set": {"order_code": order_code}}
+        )
+        
+        return {
+            "escrow_id": escrow_id,
+            "checkout_url": f"{VIVA_CHECKOUT_BASE}/web/checkout?ref={order_code}&lang=ro",
+            "amount": amount,
+            "commission": commission,
+            "total": amount + commission
+        }
+    except Exception as e:
+        logger.error(f"Escrow payment error: {str(e)}")
+        raise HTTPException(status_code=502, detail="Payment service unavailable")
+
+@api_router.get("/escrow/my-transactions")
+async def get_my_escrow_transactions(request: Request):
+    """Get user's escrow transactions (as buyer or seller)"""
+    user = await require_auth(request)
+    
+    transactions = await db.escrow_transactions.find(
+        {"$or": [{"buyer_id": user["user_id"]}, {"seller_id": user["user_id"]}]},
+        {"_id": 0}
+    ).sort([("created_at", -1)]).to_list(50)
+    
+    return {"transactions": transactions}
+
+@api_router.post("/escrow/{escrow_id}/confirm-delivery")
+async def confirm_escrow_delivery(escrow_id: str, request: Request):
+    """Buyer confirms delivery - releases funds to seller"""
+    user = await require_auth(request)
+    
+    escrow = await db.escrow_transactions.find_one({"escrow_id": escrow_id})
+    if not escrow:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if escrow["buyer_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Only buyer can confirm delivery")
+    
+    if escrow["status"] != "paid":
+        raise HTTPException(status_code=400, detail="Invalid transaction status")
+    
+    await db.escrow_transactions.update_one(
+        {"escrow_id": escrow_id},
+        {"$set": {
+            "status": "completed",
+            "completed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # TODO: Transfer funds to seller via Viva Wallet payout
+    
+    return {"message": "Plata a fost eliberată către vânzător. Mulțumim!"}
+
+@api_router.post("/escrow/{escrow_id}/dispute")
+async def dispute_escrow(escrow_id: str, request: Request):
+    """Open dispute for escrow transaction"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    escrow = await db.escrow_transactions.find_one({"escrow_id": escrow_id})
+    if not escrow:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if escrow["buyer_id"] != user["user_id"] and escrow["seller_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    await db.escrow_transactions.update_one(
+        {"escrow_id": escrow_id},
+        {"$set": {
+            "status": "disputed",
+            "dispute_reason": body.get("reason"),
+            "disputed_by": user["user_id"],
+            "disputed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Disputa a fost deschisă. Echipa noastră va analiza cazul."}
+
 # ===================== STATIC FILES =====================
 
 from fastapi.staticfiles import StaticFiles
