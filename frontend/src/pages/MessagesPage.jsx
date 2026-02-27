@@ -152,6 +152,54 @@ export default function MessagesPage() {
     }
   }, [user, fetchConversations]);
 
+  // Handle new conversation from query params
+  useEffect(() => {
+    const initNewConversation = async () => {
+      if (!adIdParam || !toUserParam || !user) return;
+      
+      // Check if conversation already exists
+      const existingConv = conversations.find(c => 
+        c.ad_id === adIdParam && c.participants.includes(toUserParam)
+      );
+      
+      if (existingConv) {
+        navigate(`/messages/${existingConv.conversation_id}`, { replace: true });
+        return;
+      }
+      
+      // Fetch ad and user info for new conversation UI
+      try {
+        const [adResponse, userResponse] = await Promise.all([
+          axios.get(`${API_URL}/api/ads/${adIdParam}`),
+          axios.get(`${API_URL}/api/users/${toUserParam}/public`)
+        ]);
+        
+        setNewConversationData({
+          ad_id: adIdParam,
+          ad_title: adResponse.data.title,
+          ad_image: adResponse.data.images?.[0],
+          ad_price: adResponse.data.price,
+          to_user_id: toUserParam,
+          to_user_name: userResponse.data.name,
+          to_user_picture: userResponse.data.picture
+        });
+        setActiveConversation({
+          ad_id: adIdParam,
+          ad_title: adResponse.data.title,
+          ad_image: adResponse.data.images?.[0],
+          ad_price: adResponse.data.price,
+          participants: [user.user_id, toUserParam]
+        });
+        setMessages([]);
+      } catch (error) {
+        console.error("Error fetching new conversation data:", error);
+        toast.error("Nu am putut încărca datele conversației");
+      }
+    };
+    
+    initNewConversation();
+  }, [adIdParam, toUserParam, user, conversations, navigate]);
+
   // Fetch conversation messages
   useEffect(() => {
     const fetchMessages = async () => {
