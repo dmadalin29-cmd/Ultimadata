@@ -48,11 +48,23 @@ export default function CreateAdPage() {
   const [uploading, setUploading] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   
+  // Location data
+  const [judete, setJudete] = useState([]);
+  const [localitati, setLocalitati] = useState([]);
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationResults, setLocationResults] = useState([]);
+  const [searchingLocation, setSearchingLocation] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  
   // Form data
   const [formData, setFormData] = useState({
     category_id: "",
     subcategory_id: "",
     city_id: "",
+    judet_code: "",
+    localitate: "",
+    location_lat: null,
+    location_lng: null,
     title: "",
     description: "",
     price: "",
@@ -67,19 +79,78 @@ export default function CreateAdPage() {
     fetchData();
   }, []);
 
+  // Fetch localitati when judet changes
+  useEffect(() => {
+    if (formData.judet_code) {
+      fetchLocalitati(formData.judet_code);
+    } else {
+      setLocalitati([]);
+    }
+  }, [formData.judet_code]);
+
+  // Debounced location search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (locationSearch.length >= 2) {
+        searchLocations(locationSearch);
+      } else {
+        setLocationResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [locationSearch]);
+
   const fetchData = async () => {
     try {
-      const [categoriesRes, citiesRes, brandsRes] = await Promise.all([
+      const [categoriesRes, citiesRes, brandsRes, judeteRes] = await Promise.all([
         axios.get(`${API_URL}/api/categories`),
         axios.get(`${API_URL}/api/cities`),
-        axios.get(`${API_URL}/api/car-brands`)
+        axios.get(`${API_URL}/api/car-brands`),
+        axios.get(`${API_URL}/api/judete`)
       ]);
       setCategories(categoriesRes.data);
       setCities(citiesRes.data);
       setCarBrands(brandsRes.data);
+      setJudete(judeteRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
+  };
+
+  const fetchLocalitati = async (judetCode) => {
+    try {
+      const res = await axios.get(`${API_URL}/api/localitati?judet_code=${judetCode}&limit=500`);
+      setLocalitati(res.data);
+    } catch (error) {
+      console.error("Error fetching localitati:", error);
+    }
+  };
+
+  const searchLocations = async (query) => {
+    setSearchingLocation(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/localitati/autocomplete?q=${encodeURIComponent(query)}&limit=10`);
+      setLocationResults(res.data);
+      setShowLocationDropdown(true);
+    } catch (error) {
+      console.error("Error searching locations:", error);
+    } finally {
+      setSearchingLocation(false);
+    }
+  };
+
+  const selectLocation = (location) => {
+    setFormData(prev => ({
+      ...prev,
+      judet_code: location.judet_code,
+      localitate: location.name,
+      location_lat: location.lat,
+      location_lng: location.lng
+    }));
+    setLocationSearch(location.display || `${location.name}, ${location.judet_name}`);
+    setShowLocationDropdown(false);
+    // Also fetch localitati for the selected judet
+    fetchLocalitati(location.judet_code);
   };
 
   const selectedCategory = categories.find(c => c.id === formData.category_id);
