@@ -221,12 +221,13 @@ export default function CreateAdPage() {
     setGeneratingAI(true);
     try {
       const category = categories.find(c => c.id === formData.category_id);
-      const city = cities.find(c => c.id === formData.city_id);
+      const judet = judete.find(j => j.code === formData.judet_code);
+      const locationName = formData.localitate ? `${formData.localitate}, ${judet?.name || ''}` : '';
       
       const response = await axios.post(`${API_URL}/api/generate-description`, {
         title: formData.title,
         category: category?.name || "",
-        city: city?.name || "",
+        city: locationName,
         price: formData.price || null,
         details: formData.details
       }, { withCredentials: true });
