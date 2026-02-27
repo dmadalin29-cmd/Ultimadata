@@ -251,8 +251,8 @@ export default function CreateAdPage() {
           toast.error("Selectează o categorie");
           return false;
         }
-        if (!formData.city_id) {
-          toast.error("Selectează un oraș");
+        if (!formData.localitate) {
+          toast.error("Selectează o localitate");
           return false;
         }
         return true;
