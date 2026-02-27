@@ -95,3 +95,4 @@ backend/
 6. **Auth** - Core functionality, careful migration
 7. **Ads** - Largest section, most dependencies
 8. **Admin** - Many dependencies on other modules
+# Deploy trigger Fri Feb 27 22:17:50 UTC 2026
