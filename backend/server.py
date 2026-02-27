@@ -1276,6 +1276,65 @@ async def get_categories():
 async def get_cities():
     return ROMANIAN_CITIES
 
+# ===================== LOCATION ENDPOINTS (JUDETE & LOCALITATI) =====================
+
+@api_router.get("/judete")
+async def get_judete():
+    """Get all Romanian counties (județe)"""
+    judete = await db.judete.find({}, {"_id": 0}).sort("name", 1).to_list(100)
+    return judete
+
+@api_router.get("/localitati")
+async def get_localitati(judet_code: Optional[str] = None, search: Optional[str] = None, limit: int = 50):
+    """Get localities, optionally filtered by county code or search term"""
+    query = {}
+    
+    if judet_code:
+        query["judet_code"] = judet_code.upper()
+    
+    if search:
+        # Case-insensitive search on name or search_name
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"search_name": {"$regex": search.lower(), "$options": "i"}}
+        ]
+    
+    localitati = await db.localitati.find(query, {"_id": 0}).sort("name", 1).limit(limit).to_list(limit)
+    return localitati
+
+@api_router.get("/localitati/autocomplete")
+async def autocomplete_localitati(q: str, limit: int = 10):
+    """Autocomplete search for localities - returns locality with county info"""
+    if not q or len(q) < 2:
+        return []
+    
+    # Search localities
+    localitati = await db.localitati.find(
+        {"$or": [
+            {"name": {"$regex": f"^{q}", "$options": "i"}},
+            {"search_name": {"$regex": f"^{q.lower()}"}}
+        ]},
+        {"_id": 0}
+    ).limit(limit).to_list(limit)
+    
+    # Enrich with county names
+    results = []
+    judete_cache = {}
+    
+    for loc in localitati:
+        judet_code = loc.get("judet_code")
+        if judet_code not in judete_cache:
+            judet = await db.judete.find_one({"code": judet_code}, {"_id": 0})
+            judete_cache[judet_code] = judet.get("name", "") if judet else ""
+        
+        results.append({
+            **loc,
+            "judet_name": judete_cache[judet_code],
+            "display": f"{loc['name']}, {judete_cache[judet_code]}"
+        })
+    
+    return results
+
 @api_router.get("/car-brands")
 async def get_car_brands():
     return CAR_BRANDS
