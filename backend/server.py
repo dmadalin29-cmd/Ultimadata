@@ -4263,6 +4263,318 @@ async def get_ads_performance(request: Request):
     
     return {"ads": performance}
 
+# ===================== LOYALTY PROGRAM / POINTS SYSTEM =====================
+
+# Points configuration
+POINTS_CONFIG = {
+    "ad_posted": 10,
+    "ad_sold": 50,
+    "review_left": 5,
+    "review_received_5star": 20,
+    "referral_signup": 100,
+    "referral_ad_posted": 50,
+    "daily_login": 2,
+    "profile_completed": 25,
+    "identity_verified": 100,
+    "first_ad": 50
+}
+
+# Level thresholds
+LOYALTY_LEVELS = [
+    {"level": 1, "name": "Bronze", "min_points": 0, "color": "#CD7F32", "benefits": ["Badge Bronze"]},
+    {"level": 2, "name": "Silver", "min_points": 200, "color": "#C0C0C0", "benefits": ["Badge Silver", "1 TopUp gratuit/lună"]},
+    {"level": 3, "name": "Gold", "min_points": 500, "color": "#FFD700", "benefits": ["Badge Gold", "3 TopUp-uri gratuite/lună", "Prioritate în listări"]},
+    {"level": 4, "name": "Platinum", "min_points": 1000, "color": "#E5E4E2", "benefits": ["Badge Platinum", "TopUp-uri nelimitate", "Suport prioritar", "Badge exclusiv"]}
+]
+
+async def get_user_level(points: int):
+    """Get loyalty level based on points"""
+    current_level = LOYALTY_LEVELS[0]
+    for level in LOYALTY_LEVELS:
+        if points >= level["min_points"]:
+            current_level = level
+    return current_level
+
+async def add_points(user_id: str, action: str, description: str = None):
+    """Add points to a user for an action"""
+    points = POINTS_CONFIG.get(action, 0)
+    if points == 0:
+        return None
+    
+    # Create points transaction
+    transaction = {
+        "transaction_id": f"pts_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id,
+        "action": action,
+        "points": points,
+        "description": description or action.replace("_", " ").title(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.points_transactions.insert_one(transaction)
+    
+    # Update user's total points
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$inc": {"loyalty_points": points}}
+    )
+    
+    # Recalculate level
+    user = await db.users.find_one({"user_id": user_id})
+    new_total = user.get("loyalty_points", 0)
+    new_level = await get_user_level(new_total)
+    
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"loyalty_level": new_level["level"], "loyalty_level_name": new_level["name"]}}
+    )
+    
+    return {"points_earned": points, "new_total": new_total, "level": new_level}
+
+@api_router.get("/loyalty/status")
+async def get_loyalty_status(request: Request):
+    """Get current user's loyalty status"""
+    user = await require_auth(request)
+    
+    points = user.get("loyalty_points", 0)
+    current_level = await get_user_level(points)
+    
+    # Find next level
+    next_level = None
+    for level in LOYALTY_LEVELS:
+        if level["min_points"] > points:
+            next_level = level
+            break
+    
+    # Get recent transactions
+    transactions = await db.points_transactions.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort([("created_at", -1)]).limit(20).to_list(20)
+    
+    return {
+        "points": points,
+        "level": current_level,
+        "next_level": next_level,
+        "points_to_next": next_level["min_points"] - points if next_level else 0,
+        "recent_transactions": transactions,
+        "all_levels": LOYALTY_LEVELS
+    }
+
+@api_router.get("/loyalty/leaderboard")
+async def get_loyalty_leaderboard(limit: int = 20):
+    """Get top users by loyalty points"""
+    top_users = await db.users.find(
+        {"loyalty_points": {"$gt": 0}},
+        {"_id": 0, "user_id": 1, "name": 1, "picture": 1, "loyalty_points": 1, "loyalty_level_name": 1}
+    ).sort([("loyalty_points", -1)]).limit(limit).to_list(limit)
+    
+    return {"leaderboard": top_users}
+
+@api_router.post("/loyalty/claim-daily")
+async def claim_daily_points(request: Request):
+    """Claim daily login points"""
+    user = await require_auth(request)
+    
+    # Check if already claimed today
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    existing = await db.points_transactions.find_one({
+        "user_id": user["user_id"],
+        "action": "daily_login",
+        "created_at": {"$regex": f"^{today}"}
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Ai revendicat deja punctele de astăzi")
+    
+    result = await add_points(user["user_id"], "daily_login", "Login zilnic")
+    return result
+
+# ===================== REFERRAL SYSTEM =====================
+
+@api_router.get("/referral/code")
+async def get_referral_code(request: Request):
+    """Get or create user's referral code"""
+    user = await require_auth(request)
+    
+    # Check if user has a referral code
+    referral_code = user.get("referral_code")
+    if not referral_code:
+        # Generate unique code
+        referral_code = f"X67{user['user_id'][-6:].upper()}"
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$set": {"referral_code": referral_code}}
+        )
+    
+    # Get referral stats
+    referrals = await db.users.count_documents({"referred_by": user["user_id"]})
+    referral_points = await db.points_transactions.aggregate([
+        {"$match": {"user_id": user["user_id"], "action": {"$regex": "^referral"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$points"}}}
+    ]).to_list(1)
+    
+    total_referral_points = referral_points[0]["total"] if referral_points else 0
+    
+    return {
+        "referral_code": referral_code,
+        "referral_link": f"https://x67digital.com/auth?ref={referral_code}",
+        "total_referrals": referrals,
+        "points_earned": total_referral_points
+    }
+
+@api_router.get("/referral/list")
+async def get_referral_list(request: Request):
+    """Get list of users referred by current user"""
+    user = await require_auth(request)
+    
+    referrals = await db.users.find(
+        {"referred_by": user["user_id"]},
+        {"_id": 0, "user_id": 1, "name": 1, "picture": 1, "created_at": 1}
+    ).sort([("created_at", -1)]).limit(50).to_list(50)
+    
+    return {"referrals": referrals}
+
+@api_router.post("/referral/apply")
+async def apply_referral_code(request: Request):
+    """Apply a referral code during registration"""
+    body = await request.json()
+    referral_code = body.get("referral_code")
+    user_id = body.get("user_id")
+    
+    if not referral_code or not user_id:
+        raise HTTPException(status_code=400, detail="Missing referral_code or user_id")
+    
+    # Find referrer
+    referrer = await db.users.find_one({"referral_code": referral_code})
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Codul de referral nu este valid")
+    
+    # Check if user already has a referrer
+    user = await db.users.find_one({"user_id": user_id})
+    if user and user.get("referred_by"):
+        raise HTTPException(status_code=400, detail="Ai aplicat deja un cod de referral")
+    
+    # Can't refer yourself
+    if referrer["user_id"] == user_id:
+        raise HTTPException(status_code=400, detail="Nu poți folosi propriul cod de referral")
+    
+    # Apply referral
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"referred_by": referrer["user_id"], "referred_by_code": referral_code}}
+    )
+    
+    # Give points to referrer
+    await add_points(referrer["user_id"], "referral_signup", f"Utilizator nou: {user.get('name', 'Unknown')}")
+    
+    return {"message": "Cod de referral aplicat cu succes!"}
+
+# ===================== SELLER DASHBOARD / STATS =====================
+
+@api_router.get("/seller/dashboard")
+async def get_seller_dashboard(request: Request):
+    """Comprehensive seller dashboard with stats"""
+    user = await require_auth(request)
+    
+    # Get user's ads
+    ads = await db.ads.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).to_list(100)
+    
+    active_ads = [a for a in ads if a.get("status") == "active"]
+    
+    # Calculate totals
+    total_views = sum(a.get("views", 0) for a in ads)
+    total_favorites = sum(a.get("favorites_count", 0) for a in ads)
+    
+    # Get conversation count
+    total_conversations = await db.conversations.count_documents({
+        "participants": user["user_id"]
+    })
+    
+    # Get unread messages
+    unread_messages = await db.messages.count_documents({
+        "receiver_id": user["user_id"],
+        "is_read": False
+    })
+    
+    # Get offers stats
+    pending_offers = await db.offers.count_documents({
+        "seller_id": user["user_id"],
+        "status": "pending"
+    })
+    
+    accepted_offers = await db.offers.count_documents({
+        "seller_id": user["user_id"],
+        "status": "accepted"
+    })
+    
+    # Get review stats
+    avg_rating = user.get("avg_rating", 0)
+    total_reviews = user.get("total_reviews", 0)
+    
+    # Recent activity (last 7 days)
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    recent_views = await db.ad_views.count_documents({
+        "ad_id": {"$in": [a["ad_id"] for a in ads]},
+        "timestamp": {"$gte": week_ago}
+    }) if ads else 0
+    
+    # Top performing ads
+    top_ads = sorted(active_ads, key=lambda x: x.get("views", 0), reverse=True)[:5]
+    
+    # Get loyalty info
+    loyalty_points = user.get("loyalty_points", 0)
+    loyalty_level = await get_user_level(loyalty_points)
+    
+    return {
+        "summary": {
+            "total_ads": len(ads),
+            "active_ads": len(active_ads),
+            "total_views": total_views,
+            "total_favorites": total_favorites,
+            "total_conversations": total_conversations,
+            "unread_messages": unread_messages,
+            "pending_offers": pending_offers,
+            "accepted_offers": accepted_offers,
+            "avg_rating": avg_rating,
+            "total_reviews": total_reviews
+        },
+        "recent_activity": {
+            "views_this_week": recent_views
+        },
+        "top_ads": top_ads,
+        "loyalty": {
+            "points": loyalty_points,
+            "level": loyalty_level
+        },
+        "badges": user.get("badges", [])
+    }
+
+@api_router.get("/seller/earnings")
+async def get_seller_earnings(request: Request):
+    """Get seller's earnings from sold items (if tracked)"""
+    user = await require_auth(request)
+    
+    # Get completed transactions (accepted offers)
+    completed = await db.offers.find(
+        {"seller_id": user["user_id"], "status": "accepted"},
+        {"_id": 0, "ad_title": 1, "offered_price": 1, "counter_price": 1, "responded_at": 1}
+    ).sort([("responded_at", -1)]).limit(50).to_list(50)
+    
+    # Calculate totals
+    total_earnings = sum(
+        o.get("counter_price") or o.get("offered_price", 0) 
+        for o in completed
+    )
+    
+    return {
+        "total_sales": len(completed),
+        "total_earnings": total_earnings,
+        "recent_sales": completed[:10]
+    }
+
 # ===================== ADMIN CATEGORIES MANAGEMENT =====================
 
 @api_router.get("/admin/categories")
