@@ -1462,9 +1462,9 @@ async def get_my_ads(request: Request, page: int = 1, limit: int = 20):
 # ===================== PAYMENTS =====================
 
 PAYMENT_AMOUNTS = {
-    "post_ad": 1140,   # 11.40 RON in bani (cents)
-    "boost": 700,      # 7.00 RON for boost (ridicare anunț)
-    "promote": 2999    # 29.99 RON for promote
+    "post_ad": 0,       # GRATUIT - publicare anunț
+    "boost": 1000,      # 10.00 RON for boost/topup (ridicare anunț escorte)
+    "promote": 2999     # 29.99 RON for promote
 }
 
 @api_router.post("/payments/create-order")
