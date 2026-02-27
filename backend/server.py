@@ -2667,6 +2667,86 @@ async def get_unread_count(request: Request):
     
     return {"unread_count": count}
 
+@api_router.get("/users/{user_id}/online-status")
+async def get_user_online_status(user_id: str):
+    """Check if a user is currently online"""
+    return {"user_id": user_id, "is_online": ws_manager.is_online(user_id)}
+
+# WebSocket endpoint for real-time chat
+@app.websocket("/ws/chat/{user_id}")
+async def websocket_chat(websocket: WebSocket, user_id: str):
+    """WebSocket endpoint for real-time messaging"""
+    # Verify token from query params
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001, reason="Missing token")
+        return
+    
+    # Validate the token by decoding it
+    try:
+        from passlib.context import CryptContext
+        from jose import JWTError, jwt
+        
+        SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-change-in-production")
+        ALGORITHM = "HS256"
+        
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_user_id = payload.get("user_id")
+        
+        if token_user_id != user_id:
+            await websocket.close(code=4003, reason="Token mismatch")
+            return
+    except JWTError:
+        await websocket.close(code=4002, reason="Invalid token")
+        return
+    
+    await ws_manager.connect(websocket, user_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            # Handle different message types
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+            
+            elif data.get("type") == "typing":
+                # Notify receiver that user is typing
+                conversation_id = data.get("conversation_id")
+                if conversation_id:
+                    conv = await db.conversations.find_one({"conversation_id": conversation_id})
+                    if conv:
+                        other_user = [p for p in conv["participants"] if p != user_id][0]
+                        await ws_manager.send_personal_message({
+                            "type": "typing",
+                            "conversation_id": conversation_id,
+                            "user_id": user_id
+                        }, other_user)
+            
+            elif data.get("type") == "read":
+                # Mark messages as read
+                conversation_id = data.get("conversation_id")
+                if conversation_id:
+                    await db.messages.update_many(
+                        {"conversation_id": conversation_id, "receiver_id": user_id, "is_read": False},
+                        {"$set": {"is_read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+                    )
+                    # Notify sender that messages were read
+                    conv = await db.conversations.find_one({"conversation_id": conversation_id})
+                    if conv:
+                        other_user = [p for p in conv["participants"] if p != user_id][0]
+                        await ws_manager.send_personal_message({
+                            "type": "messages_read",
+                            "conversation_id": conversation_id,
+                            "reader_id": user_id
+                        }, other_user)
+                        
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, user_id)
+    except Exception as e:
+        logger.error(f"WebSocket error for {user_id}: {str(e)}")
+        ws_manager.disconnect(websocket, user_id)
+
 # ===================== AI CHATBOT ASSISTANT =====================
 
 CHATBOT_SYSTEM_PROMPT = """Tu ești un asistent virtual pentru X67 Digital Media Groupe, o platformă de anunțuri gratuite din România.
