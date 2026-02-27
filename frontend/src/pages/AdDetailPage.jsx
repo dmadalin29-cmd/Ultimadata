@@ -237,6 +237,26 @@ export default function AdDetailPage() {
     navigate(`/messages?ad=${adId}&to=${ad.user_id}`);
   };
 
+  const handlePaidTopup = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    setTopupLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/ads/${adId}/topup-paid`,
+        {},
+        { withCredentials: true }
+      );
+      // Redirect to Viva Wallet checkout
+      window.location.href = response.data.checkout_url;
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Eroare la procesarea plății");
+      setTopupLoading(false);
+    }
+  };
+
   const handleBoost = async () => {
     if (!user) {
       navigate("/auth");
