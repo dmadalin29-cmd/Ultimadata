@@ -626,18 +626,38 @@ export default function AdDetailPage() {
               {/* Boost/Promote - TopUp Section */}
               {isOwner && ad.status === "active" && (
                 <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
-                  <h4 className="text-white font-medium">TopUp Anunț - GRATUIT</h4>
-                  
-                  {/* TopUp Button */}
-                  <Button
-                    className="w-full bg-gradient-to-r from-fuchsia-600 to-blue-600 hover:from-fuchsia-500 hover:to-blue-500 text-white"
-                    onClick={handleTopup}
-                    disabled={topupLoading}
-                    data-testid="topup-btn"
-                  >
-                    <ArrowUp className="w-4 h-4 mr-2" />
-                    {topupLoading ? "Se procesează..." : "TopUp - Ridică în TOP"}
-                  </Button>
+                  {ad.category_id === "escorts" ? (
+                    <>
+                      <h4 className="text-white font-medium">TopUp Anunț Escorte - 10 RON</h4>
+                      <p className="text-slate-400 text-xs">Plătește 10 RON pentru a ridica anunțul în TOP. Nelimitat pe zi!</p>
+                      
+                      {/* Paid TopUp Button for Escorts */}
+                      <Button
+                        className="w-full bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-500 hover:to-violet-500 text-white shadow-[0_0_20px_rgba(217,70,239,0.3)]"
+                        onClick={handlePaidTopup}
+                        disabled={topupLoading}
+                        data-testid="paid-topup-btn"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        {topupLoading ? "Se procesează..." : "💳 Top-Up 10 RON - Ridică în TOP"}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <h4 className="text-white font-medium">TopUp Anunț - GRATUIT</h4>
+                      
+                      {/* Free TopUp Button */}
+                      <Button
+                        className="w-full bg-gradient-to-r from-fuchsia-600 to-blue-600 hover:from-fuchsia-500 hover:to-blue-500 text-white"
+                        onClick={handleTopup}
+                        disabled={topupLoading}
+                        data-testid="topup-btn"
+                      >
+                        <ArrowUp className="w-4 h-4 mr-2" />
+                        {topupLoading ? "Se procesează..." : "TopUp - Ridică în TOP"}
+                      </Button>
+                    </>
+                  )}
                   
                   {/* Auto TopUp Toggle */}
                   <div className="flex items-center justify-between p-4 rounded-xl bg-[#121212]">
