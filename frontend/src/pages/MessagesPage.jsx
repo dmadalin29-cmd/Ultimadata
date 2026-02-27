@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
 import { 
@@ -15,6 +15,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function MessagesPage() {
   const { conversationId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [conversations, setConversations] = useState([]);
@@ -26,9 +27,14 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [newConversationData, setNewConversationData] = useState(null);
   const messagesEndRef = useRef(null);
   const wsRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Check for new conversation params
+  const adIdParam = searchParams.get("ad");
+  const toUserParam = searchParams.get("to");
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
