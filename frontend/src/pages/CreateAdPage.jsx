@@ -401,20 +401,123 @@ export default function CreateAdPage() {
                 )}
 
                 <div>
-                  <label className="text-sm text-slate-400 mb-2 block">Oraș *</label>
-                  <Select 
-                    value={formData.city_id} 
-                    onValueChange={(value) => handleInputChange("city_id", value)}
-                  >
-                    <SelectTrigger className="h-12 bg-[#121212] border-white/10 text-white" data-testid="city-select">
-                      <SelectValue placeholder="Selectează orașul" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#121212] border-white/10 max-h-60">
-                      {cities.map((city) => (
-                        <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm text-slate-400 mb-2 block">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Locație *
+                  </label>
+                  
+                  {/* Autocomplete Search */}
+                  <div className="relative mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <Input
+                        value={locationSearch}
+                        onChange={(e) => setLocationSearch(e.target.value)}
+                        onFocus={() => locationResults.length > 0 && setShowLocationDropdown(true)}
+                        placeholder="Caută localitate (ex: București, Cluj-Napoca...)"
+                        className="h-12 pl-10 bg-[#121212] border-white/10 text-white placeholder:text-slate-600"
+                        data-testid="location-search"
+                      />
+                      {searchingLocation && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 animate-spin" />
+                      )}
+                    </div>
+                    
+                    {/* Autocomplete Results */}
+                    {showLocationDropdown && locationResults.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-[#121212] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {locationResults.map((loc, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => selectLocation(loc)}
+                            className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors flex items-center gap-3 border-b border-white/5 last:border-0"
+                          >
+                            <MapPin className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                            <div>
+                              <div className="text-white">{loc.name}</div>
+                              <div className="text-sm text-slate-500">{loc.judet_name} • {loc.type}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* OR Cascading Dropdowns */}
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px bg-white/10"></div>
+                    <span className="text-xs text-slate-500">sau selectează manual</span>
+                    <div className="flex-1 h-px bg-white/10"></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Județ Select */}
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">Județ</label>
+                      <Select 
+                        value={formData.judet_code} 
+                        onValueChange={(value) => {
+                          handleInputChange("judet_code", value);
+                          handleInputChange("localitate", "");
+                          setLocationSearch("");
+                          const judet = judete.find(j => j.code === value);
+                          if (judet) {
+                            setLocationSearch(judet.name);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-11 bg-[#121212] border-white/10 text-white" data-testid="judet-select">
+                          <SelectValue placeholder="Județ" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#121212] border-white/10 max-h-60">
+                          {judete.map((judet) => (
+                            <SelectItem key={judet.code} value={judet.code}>{judet.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Localitate Select */}
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">Localitate</label>
+                      <Select 
+                        value={formData.localitate} 
+                        onValueChange={(value) => {
+                          const loc = localitati.find(l => l.name === value);
+                          if (loc) {
+                            handleInputChange("localitate", loc.name);
+                            handleInputChange("location_lat", loc.lat);
+                            handleInputChange("location_lng", loc.lng);
+                            const judet = judete.find(j => j.code === formData.judet_code);
+                            setLocationSearch(`${loc.name}, ${judet?.name || ''}`);
+                          }
+                        }}
+                        disabled={!formData.judet_code}
+                      >
+                        <SelectTrigger className="h-11 bg-[#121212] border-white/10 text-white disabled:opacity-50" data-testid="localitate-select">
+                          <SelectValue placeholder="Localitate" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#121212] border-white/10 max-h-60">
+                          {localitati.map((loc) => (
+                            <SelectItem key={loc.name} value={loc.name}>
+                              {loc.name} {loc.type && <span className="text-slate-500">({loc.type})</span>}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Selected Location Display */}
+                  {formData.localitate && (
+                    <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-emerald-500" />
+                      <span className="text-emerald-400 text-sm">
+                        {formData.localitate}, {judete.find(j => j.code === formData.judet_code)?.name}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
