@@ -821,6 +821,11 @@ async def google_session(request: Request):
     )
     return response
 
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    return {"status": "healthy", "service": "x67-digital-api"}
+
 @api_router.get("/auth/me")
 async def get_me(request: Request):
     user = await get_current_user(request)
