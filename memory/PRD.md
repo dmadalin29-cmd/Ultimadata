@@ -28,7 +28,102 @@ Build a classified ads marketplace website (x67digital.com) with:
 
 ## Latest Updates (Feb 27, 2026)
 
-### SESSION 3 CHANGES (Latest - Phase 4 Complete):
+### SESSION 4 - MAJOR FEATURE EXPANSION (Latest):
+
+**🔴 Monetizare - Impact Mare:**
+1. ✅ **Sistem Promovare Plătită** (`/promote`):
+   - TOP în Categorie: 15 RON/săptămână
+   - Featured Homepage: 40 RON/săptămână
+   - Integrare Viva Wallet pentru plăți
+
+2. ✅ **Abonament Premium** - Vânzător Pro (99 RON/lună):
+   - Anunțuri nelimitate
+   - Statistici avansate
+   - Suport prioritar
+   - TopUp fără așteptare
+   - Badge Verificat
+   - Profil evidențiat
+
+3. ✅ **Sistem Escrow** (`/escrow`) - Plată Sigură:
+   - Banii păstrați în siguranță până la livrare
+   - Comision 3%
+   - Sistem de dispute
+   - Protecție cumpărător și vânzător
+
+**🟢 AI & Automatizare:**
+4. ✅ **Verificare Automată AI**:
+   - Detectare spam în anunțuri
+   - Verificare calitate conținut
+   - Aprobare automată pentru conținut "curat"
+   - Blocare automată pentru conținut problematic
+
+5. ✅ **Video în Anunțuri**:
+   - Upload video max 30 secunde
+   - Procesare prin Cloudinary
+   - Tour virtual pentru imobiliare
+
+**🟡 Content & Comunitate:**
+6. ✅ **Blog & Ghiduri** (`/blog`):
+   - Categorii: Ghiduri, Sfaturi, Noutăți, Povești de Succes
+   - SEO optimizat
+   - Counter vizualizări
+
+7. ✅ **Povești de Succes** (`/stories`):
+   - Testimoniale utilizatori
+   - Sistem like
+   - Aprobare admin
+
+8. ✅ **Forum Comunitate** (`/forum`):
+   - 6 categorii: General, Auto, Imobiliare, Electronice, Tips, Suport
+   - Sistem thread-uri și răspunsuri
+   - Pin threads pentru admin
+   - Counter vizualizări și răspunsuri
+
+**🔵 Publicitate Externă:**
+9. ✅ **Sistem Banner Ads**:
+   - Poziții: sidebar, header, footer, between_ads
+   - Tracking impressions și clicks
+   - Management admin
+
+**📝 Documente Actualizate:**
+10. ✅ Termeni și Condiții - secțiuni noi pentru Premium și Escrow
+11. ✅ FAQ - întrebări despre Premium, Referral, Escrow, Comunitate
+12. ✅ Politica de Confidențialitate - actualizată pentru noile funcționalități
+
+**New API Endpoints (Session 4):**
+- `GET /api/premium/status` - Status abonament premium
+- `GET /api/premium/plans` - Planuri disponibile
+- `POST /api/premium/subscribe` - Achiziție abonament
+- `GET /api/promotions/options` - Opțiuni promovare
+- `POST /api/promotions/purchase` - Cumpără promovare
+- `POST /api/upload/video` - Upload video pentru anunțuri
+- `GET /api/blog/posts` - Lista articole
+- `GET /api/blog/posts/{id}` - Articol individual
+- `POST /api/blog/posts` - Creare articol (admin)
+- `GET /api/stories` - Povești de succes
+- `POST /api/stories` - Trimite poveste
+- `POST /api/stories/{id}/like` - Like poveste
+- `GET /api/forum/categories` - Categorii forum
+- `GET /api/forum/threads` - Threads forum
+- `POST /api/forum/threads` - Creare thread
+- `POST /api/forum/threads/{id}/reply` - Răspuns la thread
+- `POST /api/escrow/create` - Creare tranzacție escrow
+- `GET /api/escrow/my-transactions` - Tranzacțiile mele
+- `POST /api/escrow/{id}/confirm-delivery` - Confirmare livrare
+- `POST /api/escrow/{id}/dispute` - Deschide dispută
+- `GET /api/ad-banners` - Bannere publicitare
+- `POST /api/ad-banners/{id}/click` - Track click
+
+**New Frontend Pages:**
+- `/app/frontend/src/pages/PromotePage.jsx`
+- `/app/frontend/src/pages/BlogPage.jsx`
+- `/app/frontend/src/pages/StoriesPage.jsx`
+- `/app/frontend/src/pages/ForumPage.jsx`
+- `/app/frontend/src/pages/EscrowPage.jsx`
+
+---
+
+### SESSION 3 CHANGES (Phase 4 Complete):
 
 **Phase 4 Features - Seller Dashboard, Loyalty & Referral System:**
 1. ✅ **Seller Dashboard** (`/seller-dashboard`) - Complete seller statistics page:
