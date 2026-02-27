@@ -28,10 +28,22 @@ import {
   Copy,
   MessageCircle,
   X,
-  ZoomIn
+  ZoomIn,
+  Scale,
+  DollarSign
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ro } from "date-fns/locale";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../components/ui/dialog";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
