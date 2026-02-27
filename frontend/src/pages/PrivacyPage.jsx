@@ -73,7 +73,11 @@ export default function PrivacyPage() {
                 <li>Crearea și administrarea contului de utilizator</li>
                 <li>Publicarea și gestionarea anunțurilor</li>
                 <li>Procesarea plăților prin Viva Wallet</li>
-                <li>Trimiterea notificărilor despre starea anunțurilor</li>
+                <li>Procesarea tranzacțiilor Escrow (plată sigură)</li>
+                <li>Gestionarea abonamentelor Premium și punctelor de loialitate</li>
+                <li>Facilitarea mesageriei între utilizatori</li>
+                <li>Trimiterea notificărilor despre starea anunțurilor și mesaje noi</li>
+                <li>Verificarea AI a conținutului pentru prevenirea spam-ului</li>
                 <li>Îmbunătățirea serviciilor și experienței utilizatorilor</li>
                 <li>Prevenirea fraudelor și asigurarea securității platformei</li>
                 <li>Respectarea obligațiilor legale</li>
