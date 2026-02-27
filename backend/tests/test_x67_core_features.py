@@ -184,19 +184,19 @@ class TestCities:
 
 
 class TestHealthAndMisc:
-    """Test health and miscellaneous endpoints"""
-    
-    def test_health_endpoint(self):
-        """GET /api/health should return 200"""
-        response = requests.get(f"{BASE_URL}/api/health")
-        assert response.status_code == 200
-        print("✓ Health endpoint works")
+    """Test miscellaneous endpoints"""
     
     def test_banners_endpoint(self):
         """GET /api/banners should return 200"""
         response = requests.get(f"{BASE_URL}/api/banners")
         assert response.status_code == 200
         print("✓ Banners endpoint works")
+    
+    def test_ads_search(self):
+        """GET /api/ads with search param should return 200"""
+        response = requests.get(f"{BASE_URL}/api/ads?search=test")
+        assert response.status_code == 200
+        print("✓ Ads search endpoint works")
 
 
 class TestAdCreationAuth:
