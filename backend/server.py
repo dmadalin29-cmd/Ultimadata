@@ -1491,6 +1491,9 @@ async def get_ads(
     category_id: Optional[str] = None,
     subcategory_id: Optional[str] = None,
     city_id: Optional[str] = None,
+    judet_code: Optional[str] = None,
+    localitate: Optional[str] = None,
+    has_location: Optional[str] = None,
     search: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
@@ -1500,12 +1503,19 @@ async def get_ads(
 ):
     query = {"status": "active"}
     
-    if category_id:
+    if category_id and category_id != "all":
         query["category_id"] = category_id
     if subcategory_id:
         query["subcategory_id"] = subcategory_id
     if city_id:
         query["city_id"] = city_id
+    if judet_code and judet_code != "all":
+        query["judet_code"] = judet_code
+    if localitate:
+        query["localitate"] = localitate
+    if has_location == "true":
+        query["location_lat"] = {"$exists": True, "$ne": None}
+        query["location_lng"] = {"$exists": True, "$ne": None}
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
