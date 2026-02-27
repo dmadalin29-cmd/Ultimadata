@@ -1759,6 +1759,229 @@ async def verify_payment(order_code: int, request: Request):
         "ad_id": payment.get("ad_id")
     }
 
+# ===================== PREMIUM SUBSCRIPTIONS =====================
+
+@api_router.get("/premium/status")
+async def get_premium_status(request: Request):
+    """Get user's premium subscription status"""
+    user = await require_auth(request)
+    
+    is_premium = user.get("is_premium", False)
+    expires_at = user.get("premium_expires_at")
+    
+    # Check if expired
+    if is_premium and expires_at:
+        exp_date = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if exp_date < datetime.now(timezone.utc):
+            is_premium = False
+            # Update user
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"is_premium": False}}
+            )
+    
+    return {
+        "is_premium": is_premium,
+        "expires_at": expires_at if is_premium else None,
+        "benefits": PREMIUM_BENEFITS if is_premium else {},
+        "price": PAYMENT_AMOUNTS["premium_monthly"] / 100,
+        "currency": "RON"
+    }
+
+@api_router.get("/premium/plans")
+async def get_premium_plans():
+    """Get available premium plans"""
+    return {
+        "plans": [
+            {
+                "id": "premium_monthly",
+                "name": "Vânzător Pro",
+                "price": 99,
+                "currency": "RON",
+                "period": "lună",
+                "benefits": [
+                    "Anunțuri nelimitate",
+                    "Statistici avansate",
+                    "Suport prioritar",
+                    "TopUp fără așteptare",
+                    "Badge Verificat",
+                    "Profil evidențiat"
+                ]
+            }
+        ]
+    }
+
+@api_router.post("/premium/subscribe")
+async def subscribe_premium(request: Request):
+    """Create premium subscription payment"""
+    user = await require_auth(request)
+    
+    amount = PAYMENT_AMOUNTS["premium_monthly"]
+    
+    try:
+        access_token = await get_viva_access_token()
+    except Exception as e:
+        logger.error(f"Viva token error: {e}")
+        raise HTTPException(status_code=502, detail="Payment service unavailable")
+    
+    order_payload = {
+        "amount": amount,
+        "customerTrns": f"X67 - Abonament Vânzător Pro",
+        "customer": {
+            "email": user["email"],
+            "fullName": user["name"],
+            "requestLang": "ro"
+        },
+        "sourceCode": VIVA_SOURCE_CODE,
+        "merchantTrns": json.dumps({
+            "payment_type": "premium_monthly",
+            "user_id": user["user_id"]
+        })
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{VIVA_API_BASE}/checkout/v2/orders",
+            json=order_payload,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+        )
+        
+        if response.status_code != 200:
+            logger.error(f"Viva order error: {response.text}")
+            raise HTTPException(status_code=502, detail="Failed to create payment order")
+        
+        data = response.json()
+    
+    order_code = data.get("orderCode")
+    
+    payment_doc = {
+        "payment_id": f"pay_{uuid.uuid4().hex[:12]}",
+        "order_code": order_code,
+        "user_id": user["user_id"],
+        "payment_type": "premium_monthly",
+        "amount": amount,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.payments.insert_one(payment_doc)
+    
+    return {
+        "order_code": order_code,
+        "checkout_url": f"{VIVA_CHECKOUT_BASE}/web/checkout?ref={order_code}&lang=ro",
+        "amount": amount / 100
+    }
+
+# ===================== PROMOTION SYSTEM =====================
+
+@api_router.get("/promotions/options")
+async def get_promotion_options():
+    """Get available promotion options"""
+    return {
+        "options": [
+            {
+                "id": "top_category",
+                "name": "TOP în Categorie",
+                "description": "Anunțul tău apare primul în categorie timp de 7 zile",
+                "price": 15,
+                "currency": "RON",
+                "duration_days": 7,
+                "badge": "TOP"
+            },
+            {
+                "id": "homepage",
+                "name": "Featured pe Homepage",
+                "description": "Anunțul tău apare pe pagina principală timp de 7 zile",
+                "price": 40,
+                "currency": "RON",
+                "duration_days": 7,
+                "badge": "PROMOVAT"
+            }
+        ]
+    }
+
+@api_router.post("/promotions/purchase")
+async def purchase_promotion(request: Request):
+    """Purchase a promotion for an ad"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    ad_id = body.get("ad_id")
+    promotion_type = body.get("promotion_type")  # top_category or homepage
+    
+    if promotion_type not in ["top_category", "homepage"]:
+        raise HTTPException(status_code=400, detail="Invalid promotion type")
+    
+    # Verify ad belongs to user
+    ad = await db.ads.find_one({"ad_id": ad_id, "user_id": user["user_id"]}, {"_id": 0})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found or not owned by you")
+    
+    amount = PAYMENT_AMOUNTS[promotion_type]
+    
+    try:
+        access_token = await get_viva_access_token()
+    except Exception as e:
+        logger.error(f"Viva token error: {e}")
+        raise HTTPException(status_code=502, detail="Payment service unavailable")
+    
+    promo_name = "TOP în Categorie" if promotion_type == "top_category" else "Featured pe Homepage"
+    
+    order_payload = {
+        "amount": amount,
+        "customerTrns": f"X67 - {promo_name} - {ad.get('title', '')[:30]}",
+        "customer": {
+            "email": user["email"],
+            "fullName": user["name"],
+            "requestLang": "ro"
+        },
+        "sourceCode": VIVA_SOURCE_CODE,
+        "merchantTrns": json.dumps({
+            "ad_id": ad_id,
+            "payment_type": promotion_type,
+            "user_id": user["user_id"]
+        })
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{VIVA_API_BASE}/checkout/v2/orders",
+            json=order_payload,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+        )
+        
+        if response.status_code != 200:
+            logger.error(f"Viva order error: {response.text}")
+            raise HTTPException(status_code=502, detail="Failed to create payment order")
+        
+        data = response.json()
+    
+    order_code = data.get("orderCode")
+    
+    payment_doc = {
+        "payment_id": f"pay_{uuid.uuid4().hex[:12]}",
+        "order_code": order_code,
+        "ad_id": ad_id,
+        "user_id": user["user_id"],
+        "payment_type": promotion_type,
+        "amount": amount,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.payments.insert_one(payment_doc)
+    
+    return {
+        "order_code": order_code,
+        "checkout_url": f"{VIVA_CHECKOUT_BASE}/web/checkout?ref={order_code}&lang=ro",
+        "amount": amount / 100,
+        "promotion_type": promotion_type
+    }
+
 # ===================== IMAGE UPLOAD =====================
 
 UPLOAD_DIR = Path("/app/uploads")
