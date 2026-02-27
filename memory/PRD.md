@@ -267,7 +267,7 @@ RESEND_API_KEY=re_...
 SENDER_EMAIL=onboarding@resend.dev
 
 # Frontend (.env)
-REACT_APP_BACKEND_URL=https://buy-sell-connect-5.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://marketplace-pro-168.preview.emergentagent.com
 ```
 
 ## API Endpoints
