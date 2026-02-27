@@ -23,6 +23,8 @@ import SellerProfilePage from "./pages/SellerProfilePage";
 import PriceAlertsPage from "./pages/PriceAlertsPage";
 import SavedSearchesPage from "./pages/SavedSearchesPage";
 import VerificationPage from "./pages/VerificationPage";
+import ComparePage from "./pages/ComparePage";
+import OffersPage from "./pages/OffersPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
