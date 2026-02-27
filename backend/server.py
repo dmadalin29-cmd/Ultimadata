@@ -2508,6 +2508,173 @@ async def get_favorites(request: Request, page: int = 1, limit: int = 20):
             })
     
     total = await db.favorites.count_documents({"user_id": user["user_id"]})
+
+# ===================== SAVED SEARCHES / PRICE ALERTS =====================
+
+class SavedSearchCreate(BaseModel):
+    name: str
+    category_id: Optional[str] = None
+    subcategory_id: Optional[str] = None
+    city_id: Optional[str] = None
+    search_query: Optional[str] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    alert_frequency: str = "daily"  # daily, weekly, instant
+
+@api_router.post("/saved-searches")
+async def create_saved_search(data: SavedSearchCreate, request: Request):
+    """Create a saved search with email alerts"""
+    user = await require_auth(request)
+    
+    # Check limit (max 10 saved searches per user)
+    count = await db.saved_searches.count_documents({"user_id": user["user_id"]})
+    if count >= 10:
+        raise HTTPException(status_code=400, detail="Ai atins limita de 10 căutări salvate")
+    
+    search_id = f"search_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    search_doc = {
+        "search_id": search_id,
+        "user_id": user["user_id"],
+        "name": data.name,
+        "category_id": data.category_id,
+        "subcategory_id": data.subcategory_id,
+        "city_id": data.city_id,
+        "search_query": data.search_query,
+        "min_price": data.min_price,
+        "max_price": data.max_price,
+        "alert_frequency": data.alert_frequency,
+        "is_active": True,
+        "last_checked": now,
+        "last_notified": None,
+        "new_ads_count": 0,
+        "created_at": now
+    }
+    
+    await db.saved_searches.insert_one(search_doc)
+    
+    return {"search_id": search_id, "message": "Căutarea a fost salvată cu succes!"}
+
+@api_router.get("/saved-searches")
+async def get_saved_searches(request: Request):
+    """Get user's saved searches"""
+    user = await require_auth(request)
+    
+    searches = await db.saved_searches.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort([("created_at", -1)]).to_list(100)
+    
+    # Count new ads for each search
+    for search in searches:
+        query = {"status": "active"}
+        if search.get("category_id"):
+            query["category_id"] = search["category_id"]
+        if search.get("subcategory_id"):
+            query["subcategory_id"] = search["subcategory_id"]
+        if search.get("city_id"):
+            query["city_id"] = search["city_id"]
+        if search.get("min_price"):
+            query["price"] = {"$gte": search["min_price"]}
+        if search.get("max_price"):
+            if "price" in query:
+                query["price"]["$lte"] = search["max_price"]
+            else:
+                query["price"] = {"$lte": search["max_price"]}
+        if search.get("search_query"):
+            query["$or"] = [
+                {"title": {"$regex": search["search_query"], "$options": "i"}},
+                {"description": {"$regex": search["search_query"], "$options": "i"}}
+            ]
+        
+        # Count ads newer than last_checked
+        if search.get("last_checked"):
+            query["created_at"] = {"$gt": search["last_checked"]}
+        
+        new_count = await db.ads.count_documents(query)
+        search["new_ads_count"] = new_count
+    
+    return {"saved_searches": searches}
+
+@api_router.get("/saved-searches/{search_id}/results")
+async def get_saved_search_results(search_id: str, request: Request, page: int = 1, limit: int = 20):
+    """Get ads matching a saved search"""
+    user = await require_auth(request)
+    
+    search = await db.saved_searches.find_one(
+        {"search_id": search_id, "user_id": user["user_id"]},
+        {"_id": 0}
+    )
+    if not search:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+    
+    # Build query
+    query = {"status": "active"}
+    if search.get("category_id"):
+        query["category_id"] = search["category_id"]
+    if search.get("subcategory_id"):
+        query["subcategory_id"] = search["subcategory_id"]
+    if search.get("city_id"):
+        query["city_id"] = search["city_id"]
+    if search.get("min_price"):
+        query["price"] = {"$gte": search["min_price"]}
+    if search.get("max_price"):
+        if "price" in query:
+            query["price"]["$lte"] = search["max_price"]
+        else:
+            query["price"] = {"$lte": search["max_price"]}
+    if search.get("search_query"):
+        query["$or"] = [
+            {"title": {"$regex": search["search_query"], "$options": "i"}},
+            {"description": {"$regex": search["search_query"], "$options": "i"}}
+        ]
+    
+    skip = (page - 1) * limit
+    ads = await db.ads.find(query, {"_id": 0}).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    total = await db.ads.count_documents(query)
+    
+    # Update last_checked
+    await db.saved_searches.update_one(
+        {"search_id": search_id},
+        {"$set": {"last_checked": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"ads": ads, "total": total, "page": page, "pages": (total + limit - 1) // limit}
+
+@api_router.put("/saved-searches/{search_id}")
+async def update_saved_search(search_id: str, request: Request):
+    """Update a saved search"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    search = await db.saved_searches.find_one({"search_id": search_id, "user_id": user["user_id"]})
+    if not search:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+    
+    update_data = {}
+    if "name" in body:
+        update_data["name"] = body["name"]
+    if "alert_frequency" in body:
+        update_data["alert_frequency"] = body["alert_frequency"]
+    if "is_active" in body:
+        update_data["is_active"] = body["is_active"]
+    
+    if update_data:
+        await db.saved_searches.update_one({"search_id": search_id}, {"$set": update_data})
+    
+    return {"message": "Căutarea a fost actualizată"}
+
+@api_router.delete("/saved-searches/{search_id}")
+async def delete_saved_search(search_id: str, request: Request):
+    """Delete a saved search"""
+    user = await require_auth(request)
+    
+    result = await db.saved_searches.delete_one({"search_id": search_id, "user_id": user["user_id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+    
+    return {"message": "Căutarea a fost ștearsă"}
     
     return {
         "favorites": result,
