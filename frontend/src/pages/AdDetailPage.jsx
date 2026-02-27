@@ -828,6 +828,70 @@ export default function AdDetailPage() {
       </main>
 
       <Footer />
+      
+      {/* Offer Dialog */}
+      <Dialog open={showOfferDialog} onOpenChange={setShowOfferDialog}>
+        <DialogContent className="bg-[#0A0A0A] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Fă o Ofertă de Preț</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Propune un preț pentru "{ad?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between text-sm mb-4">
+              <span className="text-slate-400">Prețul cerut:</span>
+              <span className="text-white font-bold text-lg">{ad?.price?.toLocaleString()} RON</span>
+            </div>
+            
+            <div>
+              <label className="text-sm text-slate-400 mb-2 block">Oferta ta (RON) *</label>
+              <Input
+                type="number"
+                value={offerPrice}
+                onChange={(e) => setOfferPrice(e.target.value)}
+                placeholder="Introdu prețul oferit"
+                className="bg-[#121212] border-white/10 text-white text-lg"
+              />
+              {offerPrice && ad?.price && (
+                <p className="text-sm mt-2 text-slate-400">
+                  {((parseFloat(offerPrice) / ad.price) * 100).toFixed(0)}% din prețul cerut
+                  {parseFloat(offerPrice) < ad.price && (
+                    <span className="text-green-400 ml-2">
+                      (economisești {(ad.price - parseFloat(offerPrice)).toLocaleString()} RON)
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+            
+            <div>
+              <label className="text-sm text-slate-400 mb-2 block">Mesaj (opțional)</label>
+              <Textarea
+                value={offerMessage}
+                onChange={(e) => setOfferMessage(e.target.value)}
+                placeholder="Adaugă un mesaj pentru vânzător..."
+                className="bg-[#121212] border-white/10 text-white"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowOfferDialog(false)}>
+              Anulează
+            </Button>
+            <Button 
+              onClick={handleSubmitOffer}
+              disabled={submittingOffer || !offerPrice}
+              className="bg-green-600 hover:bg-green-500"
+            >
+              {submittingOffer ? "Se trimite..." : "Trimite Oferta"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
