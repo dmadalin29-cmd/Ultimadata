@@ -374,7 +374,7 @@ export default function AdDetailPage() {
               </div>
 
               {/* Main Image */}
-              <div className="aspect-video relative">
+              <div className="aspect-video relative group cursor-pointer" onClick={() => setShowLightbox(true)}>
                 <img
                   src={images[currentImageIndex]}
                   alt={ad.title}
@@ -384,18 +384,25 @@ export default function AdDetailPage() {
                   }}
                 />
                 
+                {/* Zoom indicator */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 backdrop-blur-sm rounded-full p-3">
+                    <ZoomIn className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                
                 {/* Navigation */}
                 {images.length > 1 && (
                   <>
                     <button
-                      onClick={() => setCurrentImageIndex(i => (i - 1 + images.length) % images.length)}
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(i => (i - 1 + images.length) % images.length); }}
                       className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors"
                       data-testid="prev-image-btn"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => setCurrentImageIndex(i => (i + 1) % images.length)}
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(i => (i + 1) % images.length); }}
                       className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors"
                       data-testid="next-image-btn"
                     >
