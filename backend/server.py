@@ -1810,6 +1810,104 @@ async def toggle_auto_topup(ad_id: str, request: Request):
     
     return {"message": f"Auto-topup {'enabled' if enabled else 'disabled'}", "auto_topup": enabled}
 
+@api_router.post("/ads/{ad_id}/topup-paid")
+async def topup_ad_paid(ad_id: str, request: Request):
+    """Paid TopUp for ESCORTS category - 10 RON via Viva Wallet, unlimited per day"""
+    user = await require_auth(request)
+    
+    ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    if ad["user_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Not your ad")
+    if ad["status"] != "active":
+        raise HTTPException(status_code=400, detail="Ad must be active to topup")
+    
+    # Only for escorts category
+    if ad.get("category_id") != "escorts":
+        raise HTTPException(status_code=400, detail="Top-Up plătit este doar pentru categoria Escorte")
+    
+    # Create Viva Wallet payment order
+    try:
+        viva_client_id = os.environ.get("VIVA_CLIENT_ID")
+        viva_client_secret = os.environ.get("VIVA_CLIENT_SECRET")
+        viva_source_code = os.environ.get("VIVA_SOURCE_CODE", "9750")
+        
+        # Get access token
+        auth_url = "https://accounts.vivapayments.com/connect/token"
+        auth_response = requests.post(
+            auth_url,
+            data={
+                "grant_type": "client_credentials",
+                "client_id": viva_client_id,
+                "client_secret": viva_client_secret
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        
+        if auth_response.status_code != 200:
+            logger.error(f"Viva auth error: {auth_response.text}")
+            raise HTTPException(status_code=500, detail="Eroare autentificare plată")
+        
+        access_token = auth_response.json().get("access_token")
+        
+        # Create payment order - 10 RON = 1000 bani
+        order_url = "https://api.vivapayments.com/checkout/v2/orders"
+        order_response = requests.post(
+            order_url,
+            json={
+                "amount": 1000,  # 10.00 RON in bani (cents)
+                "customerTrns": f"Top-Up anunț escorte: {ad.get('title', ad_id)[:50]}",
+                "customer": {
+                    "email": user.get("email"),
+                    "fullName": user.get("name", "Client")
+                },
+                "paymentTimeout": 1800,
+                "preauth": False,
+                "allowRecurring": False,
+                "sourceCode": viva_source_code,
+                "merchantTrns": f"topup|{ad_id}|{user['user_id']}"
+            },
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+        )
+        
+        if order_response.status_code != 200:
+            logger.error(f"Viva order error: {order_response.text}")
+            raise HTTPException(status_code=500, detail="Eroare creare comandă plată")
+        
+        order_code = order_response.json().get("orderCode")
+        
+        # Store pending payment
+        await db.payments.insert_one({
+            "payment_id": f"pay_{uuid.uuid4().hex[:12]}",
+            "order_code": order_code,
+            "user_id": user["user_id"],
+            "ad_id": ad_id,
+            "payment_type": "boost",
+            "amount": 1000,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Return checkout URL
+        checkout_url = f"https://www.vivapayments.com/web/checkout?ref={order_code}"
+        
+        return {
+            "order_code": order_code,
+            "checkout_url": checkout_url,
+            "amount": 10.00,
+            "currency": "RON"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"TopUp payment error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Eroare la procesarea plății")
+
 # ===================== BANNERS / ADS SYSTEM =====================
 
 @api_router.get("/banners")
