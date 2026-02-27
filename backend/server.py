@@ -883,6 +883,26 @@ async def get_me(request: Request):
         "role": user.get("role", "user")
     }
 
+@api_router.get("/auth/token")
+async def get_auth_token(request: Request):
+    """Get JWT token for WebSocket authentication"""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    from jose import jwt
+    SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-change-in-production")
+    ALGORITHM = "HS256"
+    
+    # Create a short-lived token for WebSocket
+    token_data = {
+        "user_id": user["user_id"],
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {"token": token}
+
 @api_router.post("/auth/logout")
 async def logout(request: Request):
     session_token = request.cookies.get("session_token")
