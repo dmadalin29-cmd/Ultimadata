@@ -34,6 +34,7 @@ import StoriesPage from "./pages/StoriesPage";
 import ForumPage from "./pages/ForumPage";
 import EscrowPage from "./pages/EscrowPage";
 import SettingsPage from "./pages/SettingsPage";
+import MapPage from "./pages/MapPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
