@@ -2542,6 +2542,7 @@ async def send_message(request: Request):
     
     # Create message
     message_id = f"msg_{uuid.uuid4().hex[:12]}"
+    created_at = datetime.now(timezone.utc).isoformat()
     message_doc = {
         "message_id": message_id,
         "conversation_id": conversation_id,
@@ -2549,7 +2550,7 @@ async def send_message(request: Request):
         "receiver_id": receiver_id,
         "content": content,
         "is_read": False,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": created_at
     }
     
     await db.messages.insert_one(message_doc)
@@ -2559,10 +2560,31 @@ async def send_message(request: Request):
         {"conversation_id": conversation_id},
         {"$set": {
             "last_message": content[:50] + "..." if len(content) > 50 else content,
-            "last_message_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "last_message_at": created_at,
+            "updated_at": created_at
         }}
     )
+    
+    # Send real-time notification via WebSocket
+    sender_info = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0, "name": 1, "picture": 1})
+    ws_message = {
+        "type": "new_message",
+        "message": {
+            "message_id": message_id,
+            "conversation_id": conversation_id,
+            "sender_id": user["user_id"],
+            "sender_name": sender_info.get("name", "Utilizator") if sender_info else "Utilizator",
+            "sender_picture": sender_info.get("picture") if sender_info else None,
+            "content": content,
+            "created_at": created_at,
+            "ad_id": ad_id
+        }
+    }
+    
+    # Send to receiver if online
+    await ws_manager.send_personal_message(ws_message, receiver_id)
+    # Also send to sender (for multi-device sync)
+    await ws_manager.send_personal_message(ws_message, user["user_id"])
     
     return {"message_id": message_id, "conversation_id": conversation_id}
 
