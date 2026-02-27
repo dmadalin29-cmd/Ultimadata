@@ -1441,6 +1441,8 @@ export default function AdminPage() {
     { path: "/admin/users", icon: Users, label: "Utilizatori" },
     { path: "/admin/ads", icon: FileText, label: "Anunțuri" },
     { path: "/admin/banners", icon: Image, label: "Bannere" },
+    { path: "/admin/forum", icon: MessageSquare, label: "Forum" },
+    { path: "/admin/stories", icon: Trophy, label: "Povești" },
   ];
 
   const isActive = (path) => {
