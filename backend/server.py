@@ -3369,6 +3369,298 @@ async def get_user_review_stats(user_id: str):
         "distribution": rating_dist
     }
 
+# ===================== BADGES & VERIFICATION SYSTEM =====================
+
+# Badge types and their criteria
+BADGE_CRITERIA = {
+    "verified_identity": {"type": "manual", "description": "Identitate verificată cu act"},
+    "top_seller": {"type": "auto", "min_rating": 4.5, "min_reviews": 10, "description": "Rating 4.5+ cu 10+ recenzii"},
+    "fast_responder": {"type": "auto", "avg_response_hours": 2, "description": "Răspunde în medie în 2 ore"},
+    "trusted_seller": {"type": "auto", "min_rating": 4.0, "min_reviews": 5, "description": "Rating 4.0+ cu 5+ recenzii"},
+    "new_seller": {"type": "auto", "max_days": 30, "description": "Vânzător nou pe platformă"},
+    "power_seller": {"type": "auto", "min_ads": 20, "min_rating": 4.0, "description": "20+ anunțuri și rating 4.0+"},
+    "premium_member": {"type": "manual", "description": "Membru premium activ"}
+}
+
+async def calculate_user_badges(user_id: str):
+    """Calculate and update badges for a user"""
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user:
+        return []
+    
+    badges = user.get("badges", [])
+    manual_badges = [b for b in badges if BADGE_CRITERIA.get(b, {}).get("type") == "manual"]
+    
+    new_badges = list(manual_badges)  # Keep manual badges
+    
+    # Check auto badges
+    avg_rating = user.get("avg_rating", 0)
+    total_reviews = user.get("total_reviews", 0)
+    
+    # Count user's ads
+    total_ads = await db.ads.count_documents({"user_id": user_id, "status": "active"})
+    
+    # Calculate account age
+    created_at = user.get("created_at")
+    if created_at:
+        try:
+            created_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            days_since_joined = (datetime.now(timezone.utc) - created_date).days
+        except:
+            days_since_joined = 999
+    else:
+        days_since_joined = 999
+    
+    # Top Seller
+    if avg_rating >= 4.5 and total_reviews >= 10:
+        new_badges.append("top_seller")
+    
+    # Trusted Seller
+    if avg_rating >= 4.0 and total_reviews >= 5:
+        new_badges.append("trusted_seller")
+    
+    # Power Seller
+    if total_ads >= 20 and avg_rating >= 4.0:
+        new_badges.append("power_seller")
+    
+    # New Seller
+    if days_since_joined <= 30:
+        new_badges.append("new_seller")
+    
+    # Remove duplicates
+    new_badges = list(set(new_badges))
+    
+    # Update user badges
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"badges": new_badges}}
+    )
+    
+    return new_badges
+
+@api_router.get("/users/{user_id}/badges")
+async def get_user_badges(user_id: str):
+    """Get badges for a user"""
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "badges": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    badges = user.get("badges", [])
+    
+    # Return badges with descriptions
+    badge_details = []
+    for badge in badges:
+        if badge in BADGE_CRITERIA:
+            badge_details.append({
+                "id": badge,
+                "name": badge.replace("_", " ").title(),
+                "description": BADGE_CRITERIA[badge]["description"],
+                "type": BADGE_CRITERIA[badge]["type"]
+            })
+    
+    return {"badges": badge_details}
+
+@api_router.post("/users/{user_id}/recalculate-badges")
+async def recalculate_badges(user_id: str, request: Request):
+    """Recalculate badges for a user (admin only or self)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if current_user["user_id"] != user_id and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    badges = await calculate_user_badges(user_id)
+    return {"badges": badges, "message": "Badges recalculated"}
+
+# ===================== IDENTITY VERIFICATION =====================
+
+class VerificationRequest(BaseModel):
+    document_type: str  # "id_card", "passport", "driving_license"
+    document_number: str
+    document_image_url: str
+    selfie_url: Optional[str] = None
+
+@api_router.post("/verification/request")
+async def request_verification(data: VerificationRequest, request: Request):
+    """Submit identity verification request"""
+    user = await require_auth(request)
+    
+    # Check if already verified
+    if "verified_identity" in user.get("badges", []):
+        raise HTTPException(status_code=400, detail="Identitatea ta este deja verificată")
+    
+    # Check for pending request
+    pending = await db.verification_requests.find_one({
+        "user_id": user["user_id"],
+        "status": "pending"
+    })
+    if pending:
+        raise HTTPException(status_code=400, detail="Ai deja o cerere de verificare în așteptare")
+    
+    verification_id = f"ver_{uuid.uuid4().hex[:12]}"
+    verification_doc = {
+        "verification_id": verification_id,
+        "user_id": user["user_id"],
+        "user_email": user["email"],
+        "user_name": user.get("name"),
+        "document_type": data.document_type,
+        "document_number": data.document_number[-4:],  # Store only last 4 chars for privacy
+        "document_image_url": data.document_image_url,
+        "selfie_url": data.selfie_url,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "reviewed_at": None,
+        "reviewed_by": None,
+        "rejection_reason": None
+    }
+    
+    await db.verification_requests.insert_one(verification_doc)
+    
+    return {
+        "verification_id": verification_id,
+        "message": "Cererea de verificare a fost trimisă. Vei primi un email când va fi procesată."
+    }
+
+@api_router.get("/verification/status")
+async def get_verification_status(request: Request):
+    """Get current user's verification status"""
+    user = await require_auth(request)
+    
+    is_verified = "verified_identity" in user.get("badges", [])
+    
+    pending_request = await db.verification_requests.find_one(
+        {"user_id": user["user_id"], "status": "pending"},
+        {"_id": 0, "verification_id": 1, "created_at": 1, "document_type": 1}
+    )
+    
+    last_rejection = await db.verification_requests.find_one(
+        {"user_id": user["user_id"], "status": "rejected"},
+        {"_id": 0, "rejection_reason": 1, "reviewed_at": 1}
+    )
+    
+    return {
+        "is_verified": is_verified,
+        "pending_request": pending_request,
+        "last_rejection": last_rejection
+    }
+
+@api_router.get("/admin/verification-requests")
+async def get_verification_requests(request: Request, status: str = "pending", page: int = 1, limit: int = 20):
+    """Get verification requests (admin only)"""
+    await require_admin(request)
+    
+    query = {}
+    if status != "all":
+        query["status"] = status
+    
+    skip = (page - 1) * limit
+    requests = await db.verification_requests.find(
+        query,
+        {"_id": 0}
+    ).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    
+    total = await db.verification_requests.count_documents(query)
+    
+    return {
+        "requests": requests,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.post("/admin/verification-requests/{verification_id}/approve")
+async def approve_verification(verification_id: str, request: Request):
+    """Approve a verification request (admin only)"""
+    admin = await require_admin(request)
+    
+    ver_request = await db.verification_requests.find_one({"verification_id": verification_id})
+    if not ver_request:
+        raise HTTPException(status_code=404, detail="Verification request not found")
+    
+    if ver_request["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
+    # Update request
+    await db.verification_requests.update_one(
+        {"verification_id": verification_id},
+        {"$set": {
+            "status": "approved",
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "reviewed_by": admin["user_id"]
+        }}
+    )
+    
+    # Add verified badge to user
+    await db.users.update_one(
+        {"user_id": ver_request["user_id"]},
+        {"$addToSet": {"badges": "verified_identity"}}
+    )
+    
+    # Send email notification
+    try:
+        user = await db.users.find_one({"user_id": ver_request["user_id"]})
+        if user and user.get("email"):
+            await send_notification_email(
+                user["email"],
+                "Identitatea ta a fost verificată! ✅",
+                f"""
+                <h2>Felicitări, {user.get('name', 'Utilizator')}!</h2>
+                <p>Identitatea ta a fost verificată cu succes pe X67 Digital Media.</p>
+                <p>Acum ai badge-ul <strong>"Identitate Verificată"</strong> care va apărea pe profilul tău și pe toate anunțurile tale.</p>
+                <p>Acest badge crește încrederea cumpărătorilor și îți poate aduce mai multe contactări!</p>
+                """
+            )
+    except Exception as e:
+        logger.error(f"Error sending verification email: {e}")
+    
+    return {"message": "Verification approved"}
+
+@api_router.post("/admin/verification-requests/{verification_id}/reject")
+async def reject_verification(verification_id: str, request: Request):
+    """Reject a verification request (admin only)"""
+    admin = await require_admin(request)
+    body = await request.json()
+    
+    rejection_reason = body.get("reason", "Documentele nu au putut fi verificate")
+    
+    ver_request = await db.verification_requests.find_one({"verification_id": verification_id})
+    if not ver_request:
+        raise HTTPException(status_code=404, detail="Verification request not found")
+    
+    if ver_request["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
+    # Update request
+    await db.verification_requests.update_one(
+        {"verification_id": verification_id},
+        {"$set": {
+            "status": "rejected",
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "reviewed_by": admin["user_id"],
+            "rejection_reason": rejection_reason
+        }}
+    )
+    
+    # Send email notification
+    try:
+        user = await db.users.find_one({"user_id": ver_request["user_id"]})
+        if user and user.get("email"):
+            await send_notification_email(
+                user["email"],
+                "Cerere de verificare respinsă",
+                f"""
+                <h2>Salut, {user.get('name', 'Utilizator')}</h2>
+                <p>Din păcate, cererea ta de verificare a identității a fost respinsă.</p>
+                <p><strong>Motivul:</strong> {rejection_reason}</p>
+                <p>Poți trimite o nouă cerere cu documente corecte.</p>
+                """
+            )
+    except Exception as e:
+        logger.error(f"Error sending rejection email: {e}")
+    
+    return {"message": "Verification rejected"}
+
 @api_router.delete("/reviews/{review_id}")
 async def delete_review(review_id: str, request: Request):
     """Delete a review (only by reviewer or admin)"""
