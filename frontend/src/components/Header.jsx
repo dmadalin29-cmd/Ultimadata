@@ -106,16 +106,6 @@ export default function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-yellow-400 transition-colors"
-              title={isDark ? "Mod luminos" : "Mod întunecat"}
-              data-testid="theme-toggle-btn"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            
             {/* Quick Links for logged in users */}
             {user && (
               <>
