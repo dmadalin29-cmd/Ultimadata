@@ -1989,8 +1989,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Allowed file types
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
-ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm"]
-MAX_VIDEO_DURATION = 15  # seconds
+ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"]
+MAX_VIDEO_DURATION = 30  # seconds for ads
+MAX_AD_VIDEO_SIZE = 50 * 1024 * 1024  # 50MB
 
 @api_router.post("/upload")
 async def upload_image(request: Request, file: UploadFile = File(...)):
