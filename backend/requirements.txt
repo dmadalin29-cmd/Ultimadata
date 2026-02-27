@@ -15,3 +15,5 @@ resend
 aiohttp
 Pillow
 cloudinary
+websockets
+python-socketio
