@@ -1,387 +1,499 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../App";
-import { useNotifications } from "../contexts/NotificationContext";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import { toast } from "sonner";
+import { 
+  MessageCircle, Send, ArrowLeft, Search, Circle, 
+  Image as ImageIcon, MoreVertical, Check, CheckCheck,
+  Phone, Video, Info
+} from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { toast } from "sonner";
-import { MessageCircle, Send, ArrowLeft, Image, User } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ro } from "date-fns/locale";
+import Header from "../components/Header";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function MessagesPage() {
+  const { conversationId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-  const { notify, setUnreadCount } = useNotifications();
-  
+  const [user, setUser] = useState(null);
   const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [otherUser, setOtherUser] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const lastMessageCountRef = useRef({});
+  const wsRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
-  // Poll for new messages every 10 seconds
-  const checkNewMessages = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      const response = await axios.get(`${API_URL}/api/conversations`, {
-        withCredentials: true
-      });
-      const newConversations = response.data.conversations || [];
-      
-      // Check for new messages
-      let totalUnread = 0;
-      newConversations.forEach(conv => {
-        const prevCount = lastMessageCountRef.current[conv.conversation_id] || 0;
-        const currentCount = conv.message_count || 0;
-        totalUnread += conv.unread_count || 0;
-        
-        // If we have more messages than before and it's not our current conversation
-        if (currentCount > prevCount && conv.conversation_id !== selectedConversation) {
-          const senderName = conv.other_user_name || 'Cineva';
-          notify.newMessage(senderName, conv.last_message || 'Mesaj nou', `/messages`);
-        }
-        
-        lastMessageCountRef.current[conv.conversation_id] = currentCount;
-      });
-      
-      setUnreadCount(totalUnread);
-      setConversations(newConversations);
-    } catch (error) {
-      console.error("Error polling messages:", error);
-    }
-  }, [user, selectedConversation, notify, setUnreadCount]);
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    fetchConversations();
-    
-    // Check if we need to start a new conversation
-    const adId = searchParams.get("ad");
-    const receiverId = searchParams.get("to");
-    if (adId && receiverId) {
-      startNewConversation(adId, receiverId);
-    }
-    
-    // Set up polling for new messages
-    const pollInterval = setInterval(checkNewMessages, 10000);
-    return () => clearInterval(pollInterval);
-  }, [user, navigate, searchParams, checkNewMessages]);
-
-  useEffect(() => {
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
-  const fetchConversations = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/conversations`, {
-        withCredentials: true
-      });
-      setConversations(response.data.conversations || []);
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startNewConversation = async (adId, receiverId) => {
-    // Send an initial message to create the conversation
-    try {
-      const response = await axios.post(
-        `${API_URL}/api/messages`,
-        {
-          ad_id: adId,
-          receiver_id: receiverId,
-          content: "Bună! Sunt interesat de anunțul tău."
-        },
-        { withCredentials: true }
-      );
-      
-      // Refresh conversations and select the new one
-      await fetchConversations();
-      selectConversation(response.data.conversation_id);
-    } catch (error) {
-      console.error("Error starting conversation:", error);
-    }
-  };
-
-  const selectConversation = async (conversationId) => {
-    setSelectedConversation(conversationId);
-    try {
-      const response = await axios.get(
-        `${API_URL}/api/conversations/${conversationId}`,
-        { withCredentials: true }
-      );
-      setMessages(response.data.messages || []);
-      setOtherUser(response.data.other_user);
-      
-      // Mark as read in the list
-      setConversations(prev => 
-        prev.map(c => 
-          c.conversation_id === conversationId 
-            ? { ...c, unread_count: 0 } 
-            : c
-        )
-      );
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  };
-
-  // Fast polling when a conversation is open (every 3 seconds)
+  // Fetch current user
   useEffect(() => {
-    if (!selectedConversation) return;
-    
-    const pollMessages = async () => {
+    const fetchUser = async () => {
       try {
-        const response = await axios.get(
-          `${API_URL}/api/conversations/${selectedConversation}`,
-          { withCredentials: true }
-        );
-        
-        const newMessages = response.data.messages || [];
-        // Only update if there are new messages
-        if (newMessages.length !== messages.length) {
-          setMessages(newMessages);
-          // Play notification sound for new messages
-          if (newMessages.length > messages.length) {
-            const lastMsg = newMessages[newMessages.length - 1];
-            if (lastMsg.sender_id !== user.user_id) {
-              // Notify for new incoming message
-              notify.newMessage(otherUser?.name || 'Cineva', lastMsg.content, `/messages`);
-            }
-          }
-        }
+        const response = await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
+        setUser(response.data);
       } catch (error) {
-        console.error("Error polling messages:", error);
+        navigate("/auth");
+      }
+    };
+    fetchUser();
+  }, [navigate]);
+
+  // Setup WebSocket connection
+  useEffect(() => {
+    if (!user) return;
+
+    const getToken = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/auth/token`, { withCredentials: true });
+        return response.data.token;
+      } catch {
+        return null;
       }
     };
 
-    // Poll every 3 seconds when conversation is open
-    const interval = setInterval(pollMessages, 3000);
-    return () => clearInterval(interval);
-  }, [selectedConversation, messages.length, user?.user_id, notify, otherUser]);
+    const connectWebSocket = async () => {
+      const token = await getToken();
+      if (!token) return;
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation || sending) return;
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsHost = API_URL.replace(/^https?:\/\//, "");
+      const wsUrl = `${wsProtocol}//${wsHost}/ws/chat/${user.user_id}?token=${token}`;
 
-    const conv = conversations.find(c => c.conversation_id === selectedConversation);
-    if (!conv) return;
+      try {
+        wsRef.current = new WebSocket(wsUrl);
 
-    setSending(true);
+        wsRef.current.onopen = () => {
+          console.log("WebSocket connected");
+        };
+
+        wsRef.current.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === "new_message") {
+            // Add message to current conversation if active
+            if (activeConversation?.conversation_id === data.message.conversation_id) {
+              setMessages(prev => [...prev, data.message]);
+            }
+            // Update conversations list
+            fetchConversations();
+          } else if (data.type === "typing") {
+            if (data.conversation_id === activeConversation?.conversation_id) {
+              setOtherUserTyping(true);
+              setTimeout(() => setOtherUserTyping(false), 3000);
+            }
+          } else if (data.type === "messages_read") {
+            // Update read status for messages
+            if (data.conversation_id === activeConversation?.conversation_id) {
+              setMessages(prev => prev.map(msg => 
+                msg.sender_id === user.user_id ? { ...msg, is_read: true } : msg
+              ));
+            }
+          }
+        };
+
+        wsRef.current.onclose = () => {
+          console.log("WebSocket disconnected");
+          // Reconnect after 3 seconds
+          setTimeout(connectWebSocket, 3000);
+        };
+
+        wsRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error);
+        };
+      } catch (error) {
+        console.error("WebSocket connection error:", error);
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [user, activeConversation]);
+
+  // Fetch conversations
+  const fetchConversations = useCallback(async () => {
+    if (!user) return;
     try {
-      const receiverId = conv.participants.find(p => p !== user.user_id);
+      const response = await axios.get(`${API_URL}/api/conversations`, { withCredentials: true });
+      setConversations(response.data.conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchConversations();
+      setLoading(false);
+    }
+  }, [user, fetchConversations]);
+
+  // Fetch conversation messages
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!conversationId || !user) return;
+      
+      try {
+        const response = await axios.get(
+          `${API_URL}/api/conversations/${conversationId}`,
+          { withCredentials: true }
+        );
+        setActiveConversation(response.data.conversation);
+        setMessages(response.data.messages);
+        
+        // Mark as read via WebSocket
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: "read",
+            conversation_id: conversationId
+          }));
+        }
+      } catch (error) {
+        toast.error("Nu am putut încărca conversația");
+        navigate("/messages");
+      }
+    };
+    
+    fetchMessages();
+  }, [conversationId, user, navigate]);
+
+  // Send message
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !activeConversation || sendingMessage) return;
+
+    setSendingMessage(true);
+    const messageContent = newMessage;
+    setNewMessage("");
+
+    try {
+      const otherUserId = activeConversation.participants.find(p => p !== user.user_id);
       await axios.post(
         `${API_URL}/api/messages`,
         {
-          ad_id: conv.ad_id,
-          receiver_id: receiverId,
-          content: newMessage
+          ad_id: activeConversation.ad_id,
+          receiver_id: otherUserId,
+          content: messageContent
         },
         { withCredentials: true }
       );
-      
-      // Add message to local state
-      setMessages(prev => [...prev, {
-        message_id: `temp_${Date.now()}`,
-        sender_id: user.user_id,
-        content: newMessage,
-        created_at: new Date().toISOString()
-      }]);
-      
-      setNewMessage("");
-      
-      // Update conversation's last message
-      setConversations(prev =>
-        prev.map(c =>
-          c.conversation_id === selectedConversation
-            ? { ...c, last_message: newMessage, last_message_at: new Date().toISOString() }
-            : c
-        )
-      );
+      // Message will be added via WebSocket
     } catch (error) {
-      toast.error("Eroare la trimitere");
+      toast.error("Eroare la trimiterea mesajului");
+      setNewMessage(messageContent);
     } finally {
-      setSending(false);
+      setSendingMessage(false);
     }
   };
 
-  const formatTime = (date) => {
-    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ro });
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    
+    if (!isTyping) {
+      setIsTyping(true);
+      wsRef.current.send(JSON.stringify({
+        type: "typing",
+        conversation_id: activeConversation?.conversation_id
+      }));
+    }
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Stop typing indicator after 2 seconds of no typing
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
   };
+
+  // Filter conversations by search
+  const filteredConversations = conversations.filter(conv => 
+    conv.ad_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.other_user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Format timestamp
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return date.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
+    } else if (diffDays === 1) {
+      return "Ieri";
+    } else if (diffDays < 7) {
+      return date.toLocaleDateString("ro-RO", { weekday: "short" });
+    } else {
+      return date.toLocaleDateString("ro-RO", { day: "numeric", month: "short" });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#050505]">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#050505]" data-testid="messages-page">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-blue-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Mesaje</h1>
-            <p className="text-slate-400">{conversations.length} conversații</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-          {/* Conversations List */}
-          <div className="lg:col-span-1 rounded-2xl bg-[#0A0A0A] border border-white/5 overflow-hidden">
-            <div className="p-4 border-b border-white/5">
-              <h2 className="text-white font-medium">Conversații</h2>
-            </div>
-            <div className="overflow-y-auto h-[calc(100%-60px)]">
-              {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <div key={i} className="p-4 border-b border-white/5">
-                    <div className="h-12 bg-[#121212] rounded animate-pulse" />
-                  </div>
-                ))
-              ) : conversations.length > 0 ? (
-                conversations.map((conv) => (
-                  <button
-                    key={conv.conversation_id}
-                    onClick={() => selectConversation(conv.conversation_id)}
-                    className={`w-full p-4 border-b border-white/5 text-left hover:bg-white/5 transition-colors ${
-                      selectedConversation === conv.conversation_id ? "bg-white/10" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#121212] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {conv.other_user?.picture ? (
-                          <img src={conv.other_user.picture} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="w-5 h-5 text-slate-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-white font-medium truncate">{conv.other_user?.name || "Utilizator"}</p>
-                          {conv.unread_count > 0 && (
-                            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">
-                              {conv.unread_count}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-slate-400 truncate">{conv.ad_title}</p>
-                        <p className="text-xs text-slate-500 truncate mt-1">{conv.last_message}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="p-8 text-center">
-                  <MessageCircle className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-                  <p className="text-slate-400">Nicio conversație</p>
-                </div>
-              )}
+      <div className="max-w-7xl mx-auto h-[calc(100vh-80px)] flex">
+        {/* Conversations List */}
+        <div className={`w-full md:w-96 border-r border-white/5 flex flex-col ${conversationId ? 'hidden md:flex' : 'flex'}`}>
+          {/* Header */}
+          <div className="p-4 border-b border-white/5">
+            <h1 className="text-xl font-bold text-white mb-4">Mesaje</h1>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Input
+                placeholder="Caută conversații..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-[#121212] border-white/10 text-white"
+                data-testid="search-conversations"
+              />
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="lg:col-span-2 rounded-2xl bg-[#0A0A0A] border border-white/5 overflow-hidden flex flex-col">
-            {selectedConversation ? (
-              <>
-                {/* Header */}
-                <div className="p-4 border-b border-white/5 flex items-center gap-3">
-                  <button
-                    onClick={() => setSelectedConversation(null)}
-                    className="lg:hidden p-2 rounded-lg hover:bg-white/5"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-white" />
-                  </button>
-                  <div className="w-10 h-10 rounded-full bg-[#121212] flex items-center justify-center overflow-hidden">
-                    {otherUser?.picture ? (
-                      <img src={otherUser.picture} alt="" className="w-full h-full object-cover" />
+          {/* Conversations */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredConversations.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <MessageCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400">Nicio conversație</p>
+                <p className="text-slate-500 text-sm mt-2">
+                  Conversațiile vor apărea aici când contactezi vânzătorii
+                </p>
+              </div>
+            ) : (
+              filteredConversations.map((conv) => (
+                <Link
+                  key={conv.conversation_id}
+                  to={`/messages/${conv.conversation_id}`}
+                  className={`flex items-center gap-3 p-4 hover:bg-white/5 transition-colors border-b border-white/5 ${
+                    conversationId === conv.conversation_id ? 'bg-white/5' : ''
+                  }`}
+                  data-testid={`conversation-${conv.conversation_id}`}
+                >
+                  {/* Ad Image or User Avatar */}
+                  <div className="relative flex-shrink-0">
+                    {conv.ad_image ? (
+                      <img
+                        src={conv.ad_image}
+                        alt={conv.ad_title}
+                        className="w-14 h-14 rounded-xl object-cover"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/56?text=X67";
+                        }}
+                      />
                     ) : (
-                      <User className="w-5 h-5 text-slate-500" />
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-white font-bold">
+                          {conv.other_user?.name?.[0]?.toUpperCase() || "?"}
+                        </span>
+                      </div>
+                    )}
+                    {conv.unread_count > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full text-xs font-bold text-white flex items-center justify-center">
+                        {conv.unread_count}
+                      </span>
                     )}
                   </div>
-                  <div>
-                    <p className="text-white font-medium">{otherUser?.name || "Utilizator"}</p>
-                    <p className="text-xs text-slate-400">
-                      {conversations.find(c => c.conversation_id === selectedConversation)?.ad_title}
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-white truncate">
+                        {conv.other_user?.name || "Utilizator"}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {conv.last_message_at && formatTime(conv.last_message_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-400 truncate">{conv.ad_title}</p>
+                    <p className={`text-sm truncate ${conv.unread_count > 0 ? 'text-white font-medium' : 'text-slate-500'}`}>
+                      {conv.last_message || "Conversație nouă"}
                     </p>
                   </div>
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.message_id}
-                      className={`flex ${msg.sender_id === user.user_id ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                          msg.sender_id === user.user_id
-                            ? "bg-blue-600 text-white"
-                            : "bg-[#121212] text-white"
-                        }`}
-                      >
-                        <p>{msg.content}</p>
-                        <p className={`text-xs mt-1 ${
-                          msg.sender_id === user.user_id ? "text-blue-200" : "text-slate-500"
-                        }`}>
-                          {formatTime(msg.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input */}
-                <form onSubmit={sendMessage} className="p-4 border-t border-white/5">
-                  <div className="flex gap-2">
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Scrie un mesaj..."
-                      className="flex-1 bg-[#121212] border-white/10 text-white"
-                    />
-                    <Button 
-                      type="submit" 
-                      disabled={!newMessage.trim() || sending}
-                      className="bg-blue-600 hover:bg-blue-500"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MessageCircle className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <p className="text-white font-medium mb-2">Selectează o conversație</p>
-                  <p className="text-slate-400 text-sm">Alege o conversație din listă pentru a vedea mesajele</p>
-                </div>
-              </div>
+                </Link>
+              ))
             )}
           </div>
         </div>
-      </main>
 
-      <Footer />
+        {/* Chat Area */}
+        {conversationId && activeConversation ? (
+          <div className="flex-1 flex flex-col">
+            {/* Chat Header */}
+            <div className="p-4 border-b border-white/5 flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-white"
+                onClick={() => navigate("/messages")}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              
+              <Link to={`/ad/${activeConversation.ad_id}`} className="flex items-center gap-3 flex-1">
+                {activeConversation.ad_image ? (
+                  <img
+                    src={activeConversation.ad_image}
+                    alt={activeConversation.ad_title}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" />
+                )}
+                <div>
+                  <h2 className="font-medium text-white">{activeConversation.ad_title}</h2>
+                  <p className="text-sm text-slate-400">
+                    {activeConversation.ad_price ? `${activeConversation.ad_price.toLocaleString()} RON` : "Preț la cerere"}
+                  </p>
+                </div>
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                  <Phone className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                  <Info className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((msg, index) => {
+                const isOwn = msg.sender_id === user?.user_id;
+                const showDate = index === 0 || 
+                  new Date(msg.created_at).toDateString() !== new Date(messages[index-1]?.created_at).toDateString();
+                
+                return (
+                  <div key={msg.message_id}>
+                    {showDate && (
+                      <div className="text-center text-xs text-slate-500 my-4">
+                        {new Date(msg.created_at).toLocaleDateString("ro-RO", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long"
+                        })}
+                      </div>
+                    )}
+                    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                          isOwn
+                            ? 'bg-blue-600 text-white rounded-br-md'
+                            : 'bg-[#1A1A1A] text-white rounded-bl-md'
+                        }`}
+                      >
+                        <p className="break-words">{msg.content}</p>
+                        <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                          <span className="text-xs opacity-70">
+                            {formatTime(msg.created_at)}
+                          </span>
+                          {isOwn && (
+                            msg.is_read ? (
+                              <CheckCheck className="w-4 h-4 text-blue-300" />
+                            ) : (
+                              <Check className="w-4 h-4 opacity-70" />
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {otherUserTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-[#1A1A1A] rounded-2xl px-4 py-2 rounded-bl-md">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-400 hover:text-white flex-shrink-0"
+                >
+                  <ImageIcon className="w-5 h-5" />
+                </Button>
+                <Input
+                  value={newMessage}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    handleTyping();
+                  }}
+                  placeholder="Scrie un mesaj..."
+                  className="flex-1 bg-[#121212] border-white/10 text-white"
+                  data-testid="message-input"
+                />
+                <Button
+                  type="submit"
+                  disabled={!newMessage.trim() || sendingMessage}
+                  className="bg-blue-600 hover:bg-blue-500 text-white flex-shrink-0"
+                  data-testid="send-message-btn"
+                >
+                  <Send className="w-5 h-5" />
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="hidden md:flex flex-1 items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="w-20 h-20 text-slate-600 mx-auto mb-4" />
+              <h2 className="text-xl font-medium text-white mb-2">Mesajele tale</h2>
+              <p className="text-slate-400">Selectează o conversație pentru a vedea mesajele</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
