@@ -222,13 +222,6 @@ export default function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem 
-                    onClick={toggleTheme}
-                    className="cursor-pointer text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10"
-                  >
-                    {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
-                    {isDark ? "Mod luminos" : "Mod întunecat"}
-                  </DropdownMenuItem>
                   {permission !== 'granted' && (
                     <DropdownMenuItem 
                       onClick={requestPermission}
