@@ -64,6 +64,12 @@ export default function AdCard({ ad }) {
 
         {/* Badges */}
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-wrap gap-1 sm:gap-2">
+          {isVerified && (
+            <span className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-green-600 text-white text-[10px] sm:text-xs font-medium shadow-lg" title="Vânzător verificat">
+              <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="hidden sm:inline">Verificat</span>
+            </span>
+          )}
           {is_promoted && (
             <span className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-600 text-white text-[10px] sm:text-xs font-medium shadow-lg">
               <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
