@@ -127,15 +127,6 @@ const faqs = [
     ]
   }
 ];
-        a: "Verifică datele cardului și că ai suficiente fonduri. Dacă problema persistă, încearcă alt card sau contactează-ne pentru asistență."
-      },
-      {
-        q: "Site-ul nu funcționează corect pe telefonul meu.",
-        a: "Site-ul este optimizat pentru toate dispozitivele. Încearcă să actualizezi browserul sau să ștergi cache-ul. Dacă problema persistă, contactează-ne."
-      }
-    ]
-  }
-];
 
 export default function FAQPage() {
   const [openItems, setOpenItems] = useState({});
