@@ -3171,11 +3171,6 @@ async def accept_counter_offer(offer_id: str, request: Request):
     }, offer["seller_id"])
     
     return {"message": "Ai acceptat contra-oferta!", "final_price": offer["counter_price"]}
-        "favorites": result,
-        "total": total,
-        "page": page,
-        "pages": (total + limit - 1) // limit
-    }
 
 @api_router.get("/favorites/check/{ad_id}")
 async def check_favorite(ad_id: str, request: Request):
