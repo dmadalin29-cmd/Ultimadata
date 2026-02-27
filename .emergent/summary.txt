@@ -1,482 +1,169 @@
 <analysis>**original_problem_statement:**
-The user's primary goal is to build and enhance a full-stack classifieds marketplace, X67 Digital Media Groupe. The project involves a FastAPI backend, a React frontend, and a MongoDB database.
+The user's initial goal was to build a full-stack classifieds marketplace, X67 Digital Media Groupe. The project evolved into a massive feature expansion initiative to enhance user engagement and monetization.
 
-In this session, the user's requests covered a wide range of fixes and new features, culminating in a large, multi-part request:
-1.  **Critical Fixes:** Resolve a broken live site, fix deployment issues on Railway and Hostinger, correct a non-functioning admin dashboard, fix email delivery, and resolve slow performance.
-2.  **SEO:** Implement a comprehensive SEO strategy (SEO Bombă) to improve search engine rankings, including sitemaps, robots.txt, and meta tags.
-3.  **GDPR:** Add a cookie consent banner.
-4.  **UI/UX & Responsive Design:** Change the image for the Fashion category and improve the site's responsiveness across all devices.
-5.  **Final Feature Batch:**
-    *   Make the site an installable PWA on Android/iOS.
-    *   Force a permanent dark theme and remove the theme-toggle button.
-    *   Update the Privacy Policy and FAQ pages.
-    *   Implement an image zoom/lightbox feature on ad detail pages.
-    *   Ensure ad view counts are unique per IP address.
-    *   Implement a paid top-up feature (10 RON) for the Escorts category using Viva Wallet.
-    *   Push all changes to GitHub to trigger deployments.
+PRODUCT REQUIREMENTS:
+The user has requested the implementation of a comprehensive suite of features, including but not limited to:
+-   **Monetization**: Paid Promotions (Top of Category, Homepage), Premium Subscriptions (Vânzător Pro), Banner Ad system, and an Escrow (secure payment) system.
+-   **Engagement & UX**: Interactive Map for ads, Video in Ads, Video Chat, a Blog, a Success Stories section, a community Forum, and admin moderation tools for the new content sections.
+-   **Notifications**: WhatsApp/SMS notifications for new messages and offers via Twilio.
+-   **AI & Security**: AI-powered verification of ad content to detect spam and inappropriate material.
+-   **Data Management**: After implementation, update all legal documents (Terms, FAQ, Privacy Policy).
+-   **Location Services**: The immediate task is to build a location-based search and filtering system, starting with a comprehensive database of all Romanian localities, which will power the Interactive Map feature.
 
 **User's preferred language**: Romanian
 
 **what currently exists?**
-A feature-rich full-stack application. The agent successfully addressed numerous critical issues in this session, including fixing a completely broken live site by resolving backend import errors and critical frontend CORS issues. The admin dashboard performance was drastically improved (from 13s to 1.3s response time) by optimizing database queries. A comprehensive SEO strategy was implemented, including static sitemap/robots.txt files deployed to the frontend host as a workaround for deployment issues. A GDPR-compliant cookie consent banner was added. Several UI/UX improvements were made, including responsive design tweaks and changing a category image.
+A full-stack application with a FastAPI backend, a React frontend, and a MongoDB database. The backend is deployed on Railway and the frontend on Hostinger.
 
-The agent also started implementing the user's final large feature batch: the dark mode toggle was removed, the FAQ was updated, and image zoom functionality was added to the frontend. On the backend, logic for unique IP-based view counting and a new endpoint for paid top-up via Viva Wallet were created.
+In this session, the agent has implemented the backend logic for a vast number of new features, including paid promotions, premium subscriptions, AI ad moderation, video uploads, content sections (Blog, Forum, Stories), and an Escrow system. A Twilio integration for WhatsApp notifications was also completed. Placeholder frontend pages for these features were created.
+
+The agent also created and began populating the necessary MongoDB collections (, ) to support the upcoming Interactive Map feature. Admin moderation panels for the new Forum and Stories sections have been added to the frontend and backend.
 
 **Last working item**:
-    - Last item agent was working: The agent was attempting to deploy the latest batch of features. After implementing backend changes for unique views and Viva Wallet payments, and frontend changes for image zoom and UI updates, the agent pushed the backend code to GitHub. This triggered a new deployment on Railway, which failed.
-    - Status: BLOCKED
+    - Last item agent was working: Implementing the foundational backend work for the **Interactive Map** feature. The agent created and populated MongoDB collections for Romanian counties () and localities (). The last action was inserting an initial batch of 368 localities into the database. The next logical step is to create the API endpoints to serve this data to the frontend.
+    - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? backend testing agent
+    - Which testing method agent to use? both
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Backend deployment on Railway is failing due to Python dependency conflicts. (P0)
-
-  Issues Detail:
-  - Issue 1: 
-     - Attempted fixes: Earlier in the session, the agent fixed a similar issue by simplifying  to let 
-Usage:   
-  pip <command> [options]
-
-Commands:
-  install                     Install packages.
-  lock                        Generate a lock file.
-  download                    Download packages.
-  uninstall                   Uninstall packages.
-  freeze                      Output installed packages in requirements format.
-  inspect                     Inspect the python environment.
-  list                        List installed packages.
-  show                        Show information about installed packages.
-  check                       Verify installed packages have compatible 
-dependencies.
-  config                      Manage local and global configuration.
-  search                      Search PyPI for packages.
-  cache                       Inspect and manage pip's wheel cache.
-  index                       Inspect information available from package 
-indexes.
-  wheel                       Build wheels from your requirements.
-  hash                        Compute hashes of package archives.
-  completion                  A helper command used for command completion.
-  debug                       Show information useful for debugging.
-  help                        Show help for commands.
-
-General Options:
-  -h, --help                  Show help.
-  --debug                     Let unhandled exceptions propagate outside the
-                              main subroutine, instead of logging them to
-                              stderr.
-  --isolated                  Run pip in an isolated mode, ignoring
-                              environment variables and user configuration.
-  --require-virtualenv        Allow pip to only run in a virtual environment;
-                              exit with an error otherwise.
-  --python <python>           Run pip with the specified Python interpreter.
-  -v, --verbose               Give more output. Option is additive, and can be
-                              used up to 3 times.
-  -V, --version               Show version and exit.
-  -q, --quiet                 Give less output. Option is additive, and can be
-                              used up to 3 times (corresponding to WARNING,
-                              ERROR, and CRITICAL logging levels).
-  --log <path>                Path to a verbose appending log.
-  --no-input                  Disable prompting for input.
-  --keyring-provider <keyring_provider>
-                              Enable the credential lookup via the keyring
-                              library if user input is allowed. Specify which
-                              mechanism to use [auto, disabled, import,
-                              subprocess]. (default: auto)
-  --proxy <proxy>             Specify a proxy in the form
-                              scheme://[user:passwd@]proxy.server:port.
-  --retries <retries>         Maximum attempts to establish a new HTTP
-                              connection. (default: 5)
-  --timeout <sec>             Set the socket timeout (default 15 seconds).
-  --exists-action <action>    Default action when a path already exists:
-                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
-  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
-                              even though it does not have valid or any HTTPS.
-  --cert <path>               Path to PEM-encoded CA certificate bundle. If
-                              provided, overrides the default. See 'SSL
-                              Certificate Verification' in pip documentation
-                              for more information.
-  --client-cert <path>        Path to SSL client certificate, a single file
-                              containing the private key and the certificate
-                              in PEM format.
-  --cache-dir <dir>           Store the cache data in <dir>.
-  --no-cache-dir              Disable the cache.
-  --disable-pip-version-check
-                              Don't periodically check PyPI to determine
-                              whether a new version of pip is available for
-                              download. Implied with --no-
-                              index.
-  --no-color                  Suppress colored output.
-  --use-feature <feature>     Enable new functionality, that may be backward
-                              incompatible.
-  --use-deprecated <feature>  Enable deprecated functionality, that will be
-                              removed in the future.
-  --resume-retries <resume_retries>
-                              Maximum attempts to resume or restart an
-                              incomplete download. (default: 5) resolve dependencies. However, it appears a subsequent aiohappyeyeballs==2.6.1
-aiohttp==3.13.3
-aiosignal==1.4.0
-annotated-doc==0.0.4
-annotated-types==0.7.0
-anyio==4.12.1
-attrs==25.4.0
-bcrypt==4.1.3
-black==26.1.0
-boto3==1.42.42
-botocore==1.42.42
-certifi==2026.1.4
-cffi==2.0.0
-charset-normalizer==3.4.4
-click==8.3.1
-cryptography==46.0.4
-distro==1.9.0
-dnspython==2.8.0
-ecdsa==0.19.1
-email-validator==2.3.0
-emergentintegrations==0.1.0
-fastapi==0.110.1
-fastuuid==0.14.0
-filelock==3.20.3
-flake8==7.3.0
-frozenlist==1.8.0
-fsspec==2026.1.0
-google-ai-generativelanguage==0.6.15
-google-api-core==2.29.0
-google-api-python-client==2.189.0
-google-auth==2.49.0.dev0
-google-auth-httplib2==0.3.0
-google-genai==1.62.0
-google-generativeai==0.8.6
-googleapis-common-protos==1.72.0
-grpcio==1.76.0
-grpcio-status==1.71.2
-h11==0.16.0
-hf-xet==1.2.0
-httpcore==1.0.9
-httplib2==0.31.2
-httpx==0.28.1
-huggingface_hub==1.4.0
-idna==3.11
-importlib_metadata==8.7.1
-iniconfig==2.3.0
-isort==7.0.0
-Jinja2==3.1.6
-jiter==0.13.0
-jmespath==1.1.0
-jq==1.11.0
-jsonschema==4.26.0
-jsonschema-specifications==2025.9.1
-librt==0.7.8
-litellm==1.80.0
-markdown-it-py==4.0.0
-MarkupSafe==3.0.3
-mccabe==0.7.0
-mdurl==0.1.2
-motor==3.3.1
-multidict==6.7.1
-mypy==1.19.1
-mypy_extensions==1.1.0
-numpy==2.4.2
-oauthlib==3.3.1
-openai==1.99.9
-packaging==26.0
-pandas==3.0.0
-passlib==1.7.4
-pathspec==1.0.4
-pillow==12.1.0
-platformdirs==4.5.1
-pluggy==1.6.0
-propcache==0.4.1
-proto-plus==1.27.1
-protobuf==5.29.6
-pyasn1==0.6.2
-pyasn1_modules==0.4.2
-pycodestyle==2.14.0
-pycparser==3.0
-pydantic==2.12.5
-pydantic_core==2.41.5
-pyflakes==3.4.0
-Pygments==2.19.2
-PyJWT==2.11.0
-pymongo==4.5.0
-pyparsing==3.3.2
-pytest==9.0.2
-python-dateutil==2.9.0.post0
-python-dotenv==1.2.1
-python-jose==3.5.0
-python-multipart==0.0.22
-pytokens==0.4.1
-PyYAML==6.0.3
-referencing==0.37.0
-regex==2026.1.15
-requests==2.32.5
-requests-oauthlib==2.0.0
-resend==2.21.0
-rich==14.3.2
-rpds-py==0.30.0
-rsa==4.9.1
-s3transfer==0.16.0
-s5cmd==0.2.0
-shellingham==1.5.4
-six==1.17.0
-sniffio==1.3.1
-starlette==0.37.2
-stripe==14.3.0
-tenacity==9.1.2
-tiktoken==0.12.0
-tokenizers==0.22.2
-tqdm==4.67.3
-typer==0.21.1
-typer-slim==0.21.1
-typing-inspection==0.4.2
-typing_extensions==4.15.0
-tzdata==2025.3
-uritemplate==4.2.0
-urllib3==2.6.3
-uvicorn==0.25.0
-watchfiles==1.1.1
-websockets==15.0.1
-yarl==1.22.0
-zipp==3.23.0 or a similar action has recreated a complex, version-pinned , reintroducing the conflict. The final error log shows a  error related to  and its dependencies.
-     - Next debug checklist: with file & method reference
-        1.  Inspect the current  file in the workspace.
-        2.  Simplify  again. Remove all version pins () for all packages, especially for Google-related libraries. Let 
-Usage:   
-  pip <command> [options]
-
-Commands:
-  install                     Install packages.
-  lock                        Generate a lock file.
-  download                    Download packages.
-  uninstall                   Uninstall packages.
-  freeze                      Output installed packages in requirements format.
-  inspect                     Inspect the python environment.
-  list                        List installed packages.
-  show                        Show information about installed packages.
-  check                       Verify installed packages have compatible 
-dependencies.
-  config                      Manage local and global configuration.
-  search                      Search PyPI for packages.
-  cache                       Inspect and manage pip's wheel cache.
-  index                       Inspect information available from package 
-indexes.
-  wheel                       Build wheels from your requirements.
-  hash                        Compute hashes of package archives.
-  completion                  A helper command used for command completion.
-  debug                       Show information useful for debugging.
-  help                        Show help for commands.
-
-General Options:
-  -h, --help                  Show help.
-  --debug                     Let unhandled exceptions propagate outside the
-                              main subroutine, instead of logging them to
-                              stderr.
-  --isolated                  Run pip in an isolated mode, ignoring
-                              environment variables and user configuration.
-  --require-virtualenv        Allow pip to only run in a virtual environment;
-                              exit with an error otherwise.
-  --python <python>           Run pip with the specified Python interpreter.
-  -v, --verbose               Give more output. Option is additive, and can be
-                              used up to 3 times.
-  -V, --version               Show version and exit.
-  -q, --quiet                 Give less output. Option is additive, and can be
-                              used up to 3 times (corresponding to WARNING,
-                              ERROR, and CRITICAL logging levels).
-  --log <path>                Path to a verbose appending log.
-  --no-input                  Disable prompting for input.
-  --keyring-provider <keyring_provider>
-                              Enable the credential lookup via the keyring
-                              library if user input is allowed. Specify which
-                              mechanism to use [auto, disabled, import,
-                              subprocess]. (default: auto)
-  --proxy <proxy>             Specify a proxy in the form
-                              scheme://[user:passwd@]proxy.server:port.
-  --retries <retries>         Maximum attempts to establish a new HTTP
-                              connection. (default: 5)
-  --timeout <sec>             Set the socket timeout (default 15 seconds).
-  --exists-action <action>    Default action when a path already exists:
-                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
-  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
-                              even though it does not have valid or any HTTPS.
-  --cert <path>               Path to PEM-encoded CA certificate bundle. If
-                              provided, overrides the default. See 'SSL
-                              Certificate Verification' in pip documentation
-                              for more information.
-  --client-cert <path>        Path to SSL client certificate, a single file
-                              containing the private key and the certificate
-                              in PEM format.
-  --cache-dir <dir>           Store the cache data in <dir>.
-  --no-cache-dir              Disable the cache.
-  --disable-pip-version-check
-                              Don't periodically check PyPI to determine
-                              whether a new version of pip is available for
-                              download. Implied with --no-
-                              index.
-  --no-color                  Suppress colored output.
-  --use-feature <feature>     Enable new functionality, that may be backward
-                              incompatible.
-  --use-deprecated <feature>  Enable deprecated functionality, that will be
-                              removed in the future.
-  --resume-retries <resume_retries>
-                              Maximum attempts to resume or restart an
-                              incomplete download. (default: 5) handle version resolution. The file should only contain the top-level dependencies.
-        3.  Create a temporary, clean git repository containing only the backend files (as done previously).
-        4.  Force-push this clean backend project to the  GitHub repository.
-        5.  Monitor the deployment on Railway to ensure the dependency installation succeeds.
-     - Why fix this issue and what will be achieved with the fix? The backend is currently not deploying, which blocks all new features and fixes from going live. Fixing this is essential to make any progress.
-     - Status: IN PROGRESS
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? backend
-     - Blocked on other issue: This is the primary blocker for all other tasks.
+  - There are no active blocking issues. Previous deployment and Git push failures related to package dependencies and leaked credentials have been resolved.
 
 **In progress Task List**:
-  - Task 1: Complete and verify the user's final feature batch (P1)
+  - Task 1: Complete Interactive Map Feature (P0)
 
  Task Detail:
   - Task 1: 
-     - Where to resume: The backend code has been written, but the frontend integration is incomplete and nothing has been deployed or tested due to the blocker.
-        - **PWA Install:** Not yet implemented. The  and service worker () from a previous session exist but may need adjustments to ensure the install app prompt appears reliably on both Android (Chrome) and iOS (Safari).
-        - **Viva Wallet Top-Up:** The backend endpoint  has been created. A corresponding button and API call need to be added to the frontend for users to trigger this payment flow for ads in the Escorts category.
-        - **Unique Views:** Backend logic is implemented in . Needs to be verified on the live site.
-        - **Image Zoom:** Frontend code is implemented in . Needs to be verified on the live site.
-     - What will be achieved with this? This will complete the user's most recent feature request list.
+     - Where to resume: 
+        1.  Create API endpoints in  to serve the lists of  and  from the database.
+        2.  Update the ad submission form in the frontend to include a cascading dropdown ( -> ) and an autocomplete search field for location selection, as requested by the user.
+        3.  Implement the interactive map page using Leaflet.js and OpenStreetMap (the agreed-upon free alternative to Google Maps) to display ad markers based on their location.
+     - What will be achieved with this? Users will be able to specify a precise location when posting an ad and browse/filter ads geographically on a map.
      - Status: IN PROGRESS
      - Should Test frontend/backend/both after fix? both
-     - Blocked on something: **Issue 1: Backend deployment on Railway is failing**
+     - Blocked on something: None
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - Real-time Chat with WebSockets (P1)
-    - Saved Searches with email alerts (P2)
+    - **(P0) Build UI for New Features**: The backend for numerous features is done, but the frontend pages (, , , , , etc.) are mostly placeholders. They need to be built out to consume the new APIs.
+    - **(P1) Refactor **: CRITICAL. The main backend file has exceeded 5,700 lines and is a significant technical debt. The agent has created  and a new folder structure (, ). This refactoring must be prioritized to ensure maintainability.
+    - **(P1) Video Chat**: Implement WebRTC-based video chat for users.
+    - **(P2) System de Raportare Anunțuri (Ad Reporting System)**: Allow users to flag inappropriate ads for admin review.
+    - **(P2) Notificări Push Browser (Browser Push Notifications)**: Implement browser-native notifications for a free, real-time alert alternative to Twilio.
+
     Future Tasks:
-    - Price History Chart on ad detail pages (P2)
-    - Refactor  into FastAPI routers (P2)
-    - Re-enable and test the original Viva Wallet payment integration (P2)
-    - Implement Identity Verification for sellers (P3)
-    - Migrate static data (categories, cities) to MongoDB (P3)
-    - Implement a permanent cloud storage solution (e.g., S3, Cloudinary) for uploaded images to solve the 404 issue for banners after redeploys. (P2)
+    - Implement a rich graphical dashboard for the admin panel.
+    - Add advanced features like Ad Comparison, user-created favorite lists, an Auction system, and advanced identity verification.
+    - Fix the reported layout issue for the PWA on iPhone home screens.
+    - Develop a public API for third-party integrations.
+    - Add multi-language support (starting with English).
 
 **Completed work in this session**
-- List of all completed tasks with file and method name:
-  - **Live Site Restored**: Fixed  in  by updating  usage to .
-  - **Admin Dashboard Fixed**: Resolved CORS error in  by specifying allowed origins.
-  - **Dashboard Performance Optimized**: Rewrote  in  to use MongoDB aggregations and parallel queries, reducing load time from 13s to 1.3s.
-  - **Admin Ad Deletion Fixed**: Added a delete button and  function in .
-  - **Email Delivery Fixed**: Updated the expired  in the environment.
-  - **SEO Implemented**: Added dynamic meta tags (), , and a static  to the frontend, along with  rules for caching.
-  - **Cookie Consent Banner**: Created and integrated .
-  - **UI/UX Updates**: Changed the Fashion category image in  and improved responsive design across multiple components.
-  - **Manual Deployment**: Successfully deployed the frontend manually to the user's Hostinger server via SSH and SCP.
+- **Full Feature Suite (Backend)**: Implemented backend logic for Paid Promotions, Premium Subscriptions, AI Ad Moderation, Video Uploads via Cloudinary, Blog, Forum, Success Stories, and Escrow payments.
+- **Twilio WhatsApp Integration**: Integrated Twilio to send WhatsApp notifications for new private messages and offers. Created a  for users to manage their phone number.
+- **Admin Moderation Tools**: Added new sections in the Admin Panel to allow moderators to manage Forum threads (pin/delete) and Success Stories (approve/reject/delete).
+- **Location Database**: Created and populated  and  collections in MongoDB as a foundation for the map feature.
+- **Legal Pages Update**: Updated the content of the Terms, FAQ, and Privacy Policy pages to reflect the newly added services.
+- **Deployment & Hotfixes**: Successfully deployed the frontend to Hostinger and backend to Railway multiple times, resolving a critical Docker build failure by adding a private package index and navigating a complex Git push issue caused by leaked credentials.
 
 **Earlier issues found/mentioned but not fixed**
-   - Issue 1: Uploaded images (like banners) return 404 after a backend redeployment on Railway because it uses an ephemeral filesystem.
-     - Debug checklist:
-        - Research and choose a cloud storage provider (e.g., AWS S3, Cloudinary).
-        - Use  to get the implementation plan.
-        - Modify the file upload endpoints in  to upload files to the cloud storage service instead of the local filesystem.
-        - Update the frontend to fetch images from the new cloud storage URLs.
-     - Why to solve this issue and what will be achieved with this? This will ensure that user-uploaded images are persistent and do not disappear after every deployment.
-     - Should Test frontend/backend/both after fix: both
-     - Is recurring issue? Y
+   - **iPhone PWA Layout Bug**: A previously reported issue where buttons are not easily tappable and the layout is incorrect when the app is added to an iPhone's home screen. The CSS added in a prior session () has not been verified as a complete fix.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Backend deployment on Railway failing due to complex  causing dependency resolution conflicts.
-  - **Recurrence count**: 2 in this session alone.
-  - **Status**: IN PROGRESS
+  - **Issue recurrence in previous fork**: Backend deployment failures.
+  - **Recurrence count**: 1 (in this session)
+  - **Status**: RESOLVED. The agent encountered a build failure on Railway due to the  package not being found. The issue was fixed by updating the  to include the correct . This highlights the fragility of the deployment pipeline.
 
 **Code Architecture**
-- **Backend**: Monolithic  on Railway.
-- **Frontend**: Create React App deployed as a static site on Hostinger.
+- **Backend**: A monolithic  in FastAPI, now critically large (>5700 lines). A  and folder structure (, ) have been created to guide future refactoring. Deployed on Railway using a Dockerfile.
+- **Frontend**: Create React App. Hosted on Hostinger.
 - **Database**: MongoDB Atlas.
-- **Deployment**:
-  - Backend:  to GitHub triggers a Railway build (currently broken).
-  - Frontend: Manual deployment to Hostinger via SSH/SCP.
+- **File Storage**: Cloudinary for images and videos.
 
 **Key Technical Concepts**
-- **CORS Fix**: Changed  to a specific list to work with .
-- **MongoDB Aggregation**: Used , , and  to drastically speed up the admin dashboard query.
-- **Asyncio **: Used to run database queries in parallel.
-- **Manual SSH/SCP Deploy**: The agent manually built the React app, created a tarball, and deployed it to the user's shared hosting environment (Hostinger).
-- **Static SEO Workaround**: When dynamic sitemap generation on the backend was blocked, the agent generated and deployed static  and  files directly to the frontend host.
+- **Twilio API**: Integration for sending WhatsApp messages.
+- **AI-powered Moderation**: Using  to analyze ad content before creation.
+- **Dockerfile Customization**: Modified to add a private  to install proprietary packages.
+- **Git Credential Management**: Handled blocked pushes from GitHub's secret scanning by using environment variables on the deployment platform and cleaning the Git history.
 
 **key DB schema**
-  - **ad_views**:  (New) - Used to track unique views for each ad.
+  - **judete**: 
+  - **localitati**: 
+  - **subscriptions**: 
+  - **blog_posts**: 
+  - **stories**: 
+  - **forum_threads**: 
+  - **users**: Now includes , , and .
+  - **ads**: Now includes , , .
 
 **changes in tech stack**
-  - None.
+  - **Twilio**: Added for WhatsApp notifications.
 
 **All files of reference**
-- ****: **(CRITICAL)** The source of the current deployment blocker. Needs to be simplified.
-- ****: Heavily modified to fix CORS, optimize dashboard performance, add unique view logic, and add a new Viva Wallet payment endpoint.
-- ****: Modified to add the ad deletion button.
-- ****: Modified to add the image zoom/lightbox feature.
-- ****: Content updated to reflect the site is free.
-- ****: Modified to remove the theme toggle.
-- ****: New file for managing dynamic SEO meta tags.
-- ****: New file for the GDPR banner.
-- ****, ****: New static SEO files.
-- ****: Updated with caching and compression rules.
+- ****: The monolithic main backend file, heavily modified and now over 5700 lines.
+- ****: Modified to fix a build issue related to private package indices.
+- ****: Modified to include new moderation panels for Forum and Stories.
+- ****: Modified to add routes for all new feature pages.
+- ****: New file outlining the plan to refactor .
+- New Frontend Pages: , , , , , .
 
 **Areas that need refactoring**:
-- The manual, multi-step deployment process for both backend (clean git repo push) and frontend (SSH/SCP) is brittle and error-prone. A more streamlined CI/CD pipeline is needed.
--  remains a large monolith and is a candidate for being broken down into smaller routers.
+- ****: This is the highest priority. Its size makes it extremely difficult to maintain and debug. The prepared  should be followed.
+- ****: This file is becoming large and could be broken down into smaller components for each management section.
 
 **key api endpoints**
--  (GET): Logic updated to track unique views by IP.
--  (POST): New endpoint to initiate a 10 RON payment via Viva Wallet for Escorts category top-ups.
--  (GET): Query logic was heavily optimized for performance.
--  & : Now served statically from the frontend host (Hostinger), not the backend.
+-  (PUT): To update user profile with phone number and notification settings.
+- , : For handling premium subscriptions.
+- , , : CRUD endpoints for the new content sections.
+- , : New admin endpoints for content moderation.
+- ,  (to be created): Endpoints to power the location selection form.
 
 **Critical Info for New Agent**
-- **IMMEDIATE BLOCKER:** The backend deployment on Railway is failing due to a Python dependency conflict in . Your first action must be to simplify this file (remove all version pins) and force-push the backend code to GitHub to trigger a new build on Railway. This is a recurring problem.
-- **Dual Deployment Environments:** Be aware that the backend runs on **Railway** and the frontend is a static build on **Hostinger**. Changes to the frontend require a manual build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) and deployment via SSH/SCP using the credentials provided in the history.
-- **Viva Wallet:** The backend logic for a paid top-up is implemented, but the frontend needs a button to call the new  endpoint.
-- **Ephemeral Filesystem:** Remind the user that uploaded files (like banners) on Railway will be lost on redeploy. A cloud storage solution is the proper long-term fix for this.
+- Your immediate task is to continue the **Interactive Map** feature. First, create the backend API endpoints for  and . Then, build the frontend UI for location selection in the ad posting form and the map view itself. Use **Leaflet.js + OpenStreetMap**.
+- The most critical technical debt is the monolithic . After the map feature, you must prioritize and execute this refactoring. A guide and folder structure are already in place.
+- Be extremely cautious with credentials and  files. The previous agent struggled with GitHub's secret scanning. Ensure secrets are stored as environment variables on Railway and  is properly git-ignored.
+- Many new features have backend logic but only placeholder frontends. A significant amount of upcoming work will be building out these user interfaces.
 
 **documents and test reports created in this job**
-  - /app/memory/PRD.md (updated)
+  - 
+  - 
+  - 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks for a large batch of features: PWA install, force dark mode, update legal/FAQ, image zoom, unique views, paid top-up for Escorts via Viva, and push all to GitHub.
-2.  **User:** Provides Viva Wallet credentials.
-3.  **User:** Provides an error log showing the backend build on Railway is failing due to dependency conflicts.
-4.  **User:** Asks if the agent can create backlinks.
-5.  **User:** Asks if a cookie banner can be added to the site.
-6.  **User:** Asks for responsive design calibration and a new image for the Fashion category.
-7.  **User:** Provides Hostinger SSH credentials for manual frontend deployment.
-8.  **User:** Provides the SSH password.
-9.  **User:** Reports the admin dashboard loads but very slowly.
-10. **User:** Submits the generated sitemap to Google Search Console.
+1.  **User**: Asked what other useful features could be added.
+2.  **User**: In response to a long list of suggestions, replied le vreau pe toate (I want them all) and asked for deployment and legal page updates afterward.
+3.  **User**: Provided answers to clarifying questions about the new features (e.g., premium price).
+4.  **User**: Provided Twilio credentials via screenshot and text.
+5.  **User**: Confirmed they set the necessary environment variables on Railway for the Twilio integration.
+6.  **User**: Asked for admin moderation capabilities for the new Forum and Stories sections.
+7.  **User**: Asked what server-side features are still needed.
+8.  **User**: Asked if the Google Maps API is free.
+9.  **User**: Confirmed that the location data needs to be added before the map feature can be built.
+10. **User**: Confirmed the implementation plan for the location feature: use all ~3,181 localities and provide both a dropdown and autocomplete search on the frontend.
 
 **Project Health Check:**
-- **Broken**: The backend service on the live environment (Railway) is broken and cannot deploy.
-- **Mocked**: The new Viva Wallet top-up feature is implemented on the backend but has no corresponding frontend UI, making it unusable.
+- **Broken**: The Git history is likely inconsistent due to forced pushes made to resolve credential leaks. The deployment pipeline has proven to be fragile and dependent on specific configurations (, environment variables).
+- **Mocked**: A large number of frontend pages (, , , , etc.) are placeholders with no data-fetching logic. The entire Interactive Map feature is conceptual at this stage.
 
 **3rd Party Integrations**
-- **Viva Wallet**: Credentials are in place. A new endpoint for paid top-ups was added.
-- **Resend**: Functional, using a new API key provided by the user.
-- **Emergent-managed Google Auth**: Functional.
-- **MongoDB Atlas**: Production database.
-- **GitHub**: Source control for both frontend and backend.
-- **emergentintegrations (GPT-5.2)**: Functional, used for AI features.
-- **Hostinger**: Hosting for the static React frontend.
-- **Railway**: Hosting for the FastAPI backend.
+- **Viva Wallet**: Payments.
+- **Cloudinary**: Image & Video storage.
+- **Resend**: Email notifications.
+- **Emergent-managed Google Auth**: User authentication.
+- **MongoDB Atlas**: Database.
+- **Twilio**: **Newly added** for WhatsApp notifications. Requires user-provided keys.
+- **Emergent Integrations**: Used for AI text moderation (). Uses Emergent LLM Key.
 
 **Testing status**
-  - Testing agent used after significant changes: NO
+  - Testing agent used after significant changes: NO. The last full test run was before the massive feature implementation.
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: []
-  - Known regressions: Backend deployment is failing.
+  - Known regressions: An issue on the messages page was reported by the user and subsequently fixed by correcting the production backend URL on the frontend. No other known regressions, but the risk is high due to the volume of un-tested changes.
 
 **Credentials to test flow:**
-- **Admin User**:  / 
-- **Hostinger SSH**:
-  - 
-  - Password: 
-- **Viva Wallet Code**: 
+- User has provided credentials for Hostinger (SSH) and GitHub (Personal Access Token) in the message history. These should be used for deployment. Do not ask for them again.
 
 **What agent forgot to execute**
-- The agent has not fully implemented the PWA install functionality.
-- The frontend component for the paid top-up via Viva Wallet is missing.
-- The persistent storage issue for uploaded files on Railway has not been addressed.</analysis>
+- The critical refactoring of  was deferred.
+- The iPhone PWA layout fix, carried over from the previous session, remains unaddressed.
+- Full end-to-end testing of the huge number of newly added features has not been performed. The agent only did spot-checks with .</analysis>
