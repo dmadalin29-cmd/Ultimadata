@@ -2031,6 +2031,53 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
         logger.error(f"Cloudinary upload error: {str(e)}")
         raise HTTPException(status_code=500, detail="Error uploading image")
 
+@api_router.post("/upload/video")
+async def upload_ad_video(request: Request, file: UploadFile = File(...)):
+    """Upload video for ads (max 30 seconds, 50MB)"""
+    await require_auth(request)
+    
+    if file.content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid file type. Allowed: MP4, WebM, MOV")
+    
+    content = await file.read()
+    
+    if len(content) > MAX_AD_VIDEO_SIZE:
+        raise HTTPException(status_code=400, detail="Video too large. Max: 50MB")
+    
+    try:
+        # Upload to Cloudinary with video processing
+        result = cloudinary.uploader.upload(
+            content,
+            folder="x67digital/videos",
+            resource_type="video",
+            eager=[
+                {"width": 720, "crop": "scale", "quality": "auto"},
+                {"format": "mp4"}
+            ],
+            eager_async=True
+        )
+        
+        # Get video duration
+        duration = result.get("duration", 0)
+        if duration > MAX_VIDEO_DURATION:
+            # Delete the uploaded video
+            cloudinary.uploader.destroy(result["public_id"], resource_type="video")
+            raise HTTPException(status_code=400, detail=f"Video too long. Max: {MAX_VIDEO_DURATION} seconds")
+        
+        return {
+            "url": result["secure_url"],
+            "filename": result["public_id"],
+            "duration": duration,
+            "width": result.get("width"),
+            "height": result.get("height"),
+            "is_video": True
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Cloudinary video upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error uploading video")
+
 @api_router.post("/upload/banner")
 async def upload_banner_media(request: Request, file: UploadFile = File(...)):
     """Upload image or video for banners (admin only)"""
