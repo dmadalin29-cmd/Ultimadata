@@ -1731,7 +1731,10 @@ async def upload_banner_media(request: Request, file: UploadFile = File(...)):
             "filename": result["public_id"],
             "is_video": is_video,
             "content_type": file.content_type
-    }
+        }
+    except Exception as e:
+        logger.error(f"Cloudinary banner upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error uploading banner")
 
 # ===================== TOPUP / BOOST SYSTEM =====================
 
