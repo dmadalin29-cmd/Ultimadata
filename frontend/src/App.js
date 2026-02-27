@@ -22,6 +22,7 @@ import DashboardPage from "./pages/DashboardPage";
 import SellerProfilePage from "./pages/SellerProfilePage";
 import PriceAlertsPage from "./pages/PriceAlertsPage";
 import SavedSearchesPage from "./pages/SavedSearchesPage";
+import VerificationPage from "./pages/VerificationPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
