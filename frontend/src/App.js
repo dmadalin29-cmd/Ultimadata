@@ -261,6 +261,30 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/seller-dashboard"
+        element={
+          <ProtectedRoute>
+            <SellerDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/loyalty"
+        element={
+          <ProtectedRoute>
+            <LoyaltyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/referral"
+        element={
+          <ProtectedRoute>
+            <ReferralPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
