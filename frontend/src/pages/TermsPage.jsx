@@ -125,11 +125,72 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* Section 5 */}
+          {/* Section 5 - Premium Services */}
+          <section className="bg-[#0A0A0A] rounded-2xl p-8 border border-white/5">
+            <div className="flex items-center gap-3 mb-4">
+              <Gift className="w-6 h-6 text-purple-500" />
+              <h2 className="text-xl font-semibold text-white">5. Servicii Premium și Promovare</h2>
+            </div>
+            <div className="text-slate-400 space-y-4">
+              <p>
+                Platforma oferă următoarele servicii opționale plătite:
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500 mt-2"></span>
+                  <div>
+                    <strong className="text-white">TOP în Categorie (15 RON/săptămână):</strong>
+                    <span className="block text-sm">Anunțul tău apare primul în categoria sa timp de 7 zile</span>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 mt-2"></span>
+                  <div>
+                    <strong className="text-white">Featured Homepage (40 RON/săptămână):</strong>
+                    <span className="block text-sm">Anunțul tău apare pe pagina principală timp de 7 zile</span>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 mt-2"></span>
+                  <div>
+                    <strong className="text-white">Vânzător Pro (99 RON/lună):</strong>
+                    <span className="block text-sm">Anunțuri nelimitate, statistici avansate, suport prioritar, badge verificat</span>
+                  </div>
+                </li>
+              </ul>
+              <p className="mt-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                <strong className="text-purple-400">Plăți securizate:</strong> Toate plățile sunt procesate prin Viva Wallet, un furnizor de plăți autorizat în UE.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 6 - Escrow */}
+          <section className="bg-[#0A0A0A] rounded-2xl p-8 border border-white/5">
+            <div className="flex items-center gap-3 mb-4">
+              <Scale className="w-6 h-6 text-green-500" />
+              <h2 className="text-xl font-semibold text-white">6. Sistem Escrow (Plată Sigură)</h2>
+            </div>
+            <div className="text-slate-400 space-y-4">
+              <p>
+                Platforma oferă un sistem de plată sigură (escrow) pentru tranzacții între utilizatori:
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>Banii cumpărătorului sunt păstrați în siguranță până la confirmarea livrării</li>
+                <li>Vânzătorul primește banii doar după ce cumpărătorul confirmă primirea</li>
+                <li>În caz de dispută, echipa noastră analizează cazul</li>
+                <li><strong className="text-white">Comision:</strong> 3% din valoarea tranzacției</li>
+              </ul>
+              <p className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                <strong className="text-green-400">Notă:</strong> Sistemul escrow este opțional. Utilizatorii pot alege să tranzacționeze direct între ei, dar în acest caz platforma nu oferă protecție pentru tranzacție.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 7 */}
           <section className="bg-[#0A0A0A] rounded-2xl p-8 border border-white/5">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-yellow-500" />
-              <h2 className="text-xl font-semibold text-white">5. Responsabilitate</h2>
+              <h2 className="text-xl font-semibold text-white">7. Responsabilitate</h2>
             </div>
             <div className="text-slate-400 space-y-4">
               <p>
