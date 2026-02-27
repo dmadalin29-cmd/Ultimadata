@@ -1542,9 +1542,21 @@ async def get_my_ads(request: Request, page: int = 1, limit: int = 20):
 # ===================== PAYMENTS =====================
 
 PAYMENT_AMOUNTS = {
-    "post_ad": 0,       # GRATUIT - publicare anunț
-    "boost": 1000,      # 10.00 RON for boost/topup (ridicare anunț escorte)
-    "promote": 2999     # 29.99 RON for promote
+    "post_ad": 0,           # GRATUIT - publicare anunț
+    "boost": 1000,          # 10.00 RON for boost/topup (ridicare anunț escorte)
+    "top_category": 1500,   # 15.00 RON/săptămână - TOP în categorie
+    "homepage": 4000,       # 40.00 RON/săptămână - Featured pe homepage
+    "premium_monthly": 9900 # 99.00 RON/lună - Abonament Vânzător Pro
+}
+
+# Premium subscription benefits
+PREMIUM_BENEFITS = {
+    "unlimited_ads": True,
+    "priority_support": True,
+    "advanced_stats": True,
+    "no_waiting_topup": True,
+    "verified_badge": True,
+    "featured_profile": True
 }
 
 @api_router.post("/payments/create-order")
