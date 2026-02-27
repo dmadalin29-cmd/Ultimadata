@@ -26,12 +26,79 @@ import {
   ArrowUp,
   Timer,
   Copy,
-  MessageCircle
+  MessageCircle,
+  X,
+  ZoomIn
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ro } from "date-fns/locale";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Image Lightbox component
+function ImageLightbox({ images, currentIndex, onClose, onNext, onPrev }) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') onNext();
+      if (e.key === 'ArrowLeft') onPrev();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'auto';
+    };
+  }, [onClose, onNext, onPrev]);
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button 
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-50"
+        onClick={onClose}
+      >
+        <X className="w-6 h-6" />
+      </button>
+      
+      {/* Previous button */}
+      {images.length > 1 && (
+        <button 
+          className="absolute left-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+        >
+          <ChevronLeft className="w-8 h-8" />
+        </button>
+      )}
+      
+      {/* Image */}
+      <img 
+        src={images[currentIndex]} 
+        alt={`Imagine ${currentIndex + 1}`}
+        className="max-w-[90vw] max-h-[90vh] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      
+      {/* Next button */}
+      {images.length > 1 && (
+        <button 
+          className="absolute right-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+        >
+          <ChevronRight className="w-8 h-8" />
+        </button>
+      )}
+      
+      {/* Counter */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 text-white text-sm">
+        {currentIndex + 1} / {images.length}
+      </div>
+    </div>
+  );
+}
 
 export default function AdDetailPage() {
   const { adId } = useParams();
