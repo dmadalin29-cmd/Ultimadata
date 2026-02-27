@@ -290,6 +290,27 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/promote"
+        element={
+          <ProtectedRoute>
+            <PromotePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/escrow"
+        element={
+          <ProtectedRoute>
+            <EscrowPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:postId" element={<BlogPage />} />
+      <Route path="/stories" element={<StoriesPage />} />
+      <Route path="/forum" element={<ForumPage />} />
+      <Route path="/forum/:threadId" element={<ForumPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
