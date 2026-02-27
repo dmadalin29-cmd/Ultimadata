@@ -25,6 +25,9 @@ import SavedSearchesPage from "./pages/SavedSearchesPage";
 import VerificationPage from "./pages/VerificationPage";
 import ComparePage from "./pages/ComparePage";
 import OffersPage from "./pages/OffersPage";
+import SellerDashboardPage from "./pages/SellerDashboardPage";
+import LoyaltyPage from "./pages/LoyaltyPage";
+import ReferralPage from "./pages/ReferralPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
