@@ -33,6 +33,7 @@ import BlogPage from "./pages/BlogPage";
 import StoriesPage from "./pages/StoriesPage";
 import ForumPage from "./pages/ForumPage";
 import EscrowPage from "./pages/EscrowPage";
+import SettingsPage from "./pages/SettingsPage";
 
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
@@ -303,6 +304,14 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <EscrowPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />

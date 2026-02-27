@@ -250,6 +250,14 @@ export default function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/settings")}
+                    className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
+                    data-testid="settings-menu-item"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Setări & Notificări
+                  </DropdownMenuItem>
                   {permission !== 'granted' && (
                     <DropdownMenuItem 
                       onClick={requestPermission}

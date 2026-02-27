@@ -21,6 +21,7 @@ import resend
 import cloudinary
 import cloudinary.uploader
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from twilio.rest import Client as TwilioClient
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -52,6 +53,43 @@ VIVA_CHECKOUT_BASE = "https://demo.vivapayments.com" if VIVA_ENVIRONMENT == "dem
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 resend.api_key = RESEND_API_KEY
+
+# Twilio WhatsApp Configuration
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_WHATSAPP_FROM = os.environ.get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886')
+
+# Initialize Twilio client
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+async def send_whatsapp_notification(to_phone: str, message: str):
+    """Send WhatsApp notification via Twilio"""
+    if not twilio_client or not to_phone:
+        return False
+    
+    try:
+        # Format phone number for WhatsApp
+        phone = to_phone.replace(" ", "").replace("-", "")
+        if not phone.startswith("+"):
+            if phone.startswith("0"):
+                phone = "+40" + phone[1:]  # Romanian format
+            else:
+                phone = "+" + phone
+        
+        whatsapp_to = f"whatsapp:{phone}"
+        
+        msg = twilio_client.messages.create(
+            body=message,
+            from_=TWILIO_WHATSAPP_FROM,
+            to=whatsapp_to
+        )
+        logger.info(f"WhatsApp sent to {phone}: {msg.sid}")
+        return True
+    except Exception as e:
+        logger.error(f"WhatsApp error: {str(e)}")
+        return False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -880,8 +918,37 @@ async def get_me(request: Request):
         "name": user["name"],
         "phone": user.get("phone"),
         "picture": user.get("picture"),
-        "role": user.get("role", "user")
+        "role": user.get("role", "user"),
+        "notification_settings": user.get("notification_settings", {
+            "email_messages": True,
+            "email_offers": True,
+            "whatsapp_messages": True,
+            "whatsapp_offers": True
+        })
     }
+
+@api_router.put("/auth/profile")
+async def update_profile(request: Request):
+    """Update user profile including phone and notification settings"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    update_fields = {}
+    
+    if "name" in body:
+        update_fields["name"] = body["name"]
+    if "phone" in body:
+        update_fields["phone"] = body["phone"]
+    if "notification_settings" in body:
+        update_fields["notification_settings"] = body["notification_settings"]
+    
+    if update_fields:
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$set": update_fields}
+        )
+    
+    return {"message": "Profil actualizat cu succes"}
 
 @api_router.get("/auth/token")
 async def get_auth_token(request: Request):
@@ -3395,6 +3462,14 @@ async def create_offer(data: OfferCreate, request: Request):
         }
     }, ad["user_id"])
     
+    # Send WhatsApp notification to seller
+    seller = await db.users.find_one({"user_id": ad["user_id"]}, {"_id": 0, "phone": 1, "name": 1, "notification_settings": 1})
+    if seller and seller.get("phone"):
+        notif_settings = seller.get("notification_settings", {})
+        if notif_settings.get("whatsapp_offers", True):
+            whatsapp_msg = f"💰 Ofertă nouă pe X67!\n\n{user.get('name')} îți oferă {data.offered_price}€ pentru \"{ad.get('title', 'anunțul tău')[:30]}\"\n\nPreț cerut: {ad.get('price')}€\n\n👉 Răspunde pe x67digital.com/offers"
+            asyncio.create_task(send_whatsapp_notification(seller["phone"], whatsapp_msg))
+    
     return {"offer_id": offer_id, "message": "Oferta a fost trimisă!"}
 
 @api_router.get("/offers/sent")
@@ -3648,6 +3723,16 @@ async def send_message(request: Request):
     await ws_manager.send_personal_message(ws_message, receiver_id)
     # Also send to sender (for multi-device sync)
     await ws_manager.send_personal_message(ws_message, user["user_id"])
+    
+    # Send WhatsApp notification to receiver
+    receiver = await db.users.find_one({"user_id": receiver_id}, {"_id": 0, "phone": 1, "name": 1, "notification_settings": 1})
+    if receiver and receiver.get("phone"):
+        notif_settings = receiver.get("notification_settings", {})
+        if notif_settings.get("whatsapp_messages", True):
+            ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0, "title": 1})
+            ad_title = ad.get("title", "anunțul tău")[:30] if ad else "anunțul tău"
+            whatsapp_msg = f"📩 Mesaj nou pe X67!\n\nDe la: {user['name']}\nAnunț: {ad_title}\n\n\"{content[:100]}{'...' if len(content) > 100 else ''}\"\n\n👉 Răspunde pe x67digital.com"
+            asyncio.create_task(send_whatsapp_notification(receiver["phone"], whatsapp_msg))
     
     return {"message_id": message_id, "conversation_id": conversation_id}
 
