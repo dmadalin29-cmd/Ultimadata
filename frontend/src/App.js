@@ -219,6 +219,22 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/saved-searches"
+        element={
+          <ProtectedRoute>
+            <SavedSearchesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/saved-searches/:searchId"
+        element={
+          <ProtectedRoute>
+            <SavedSearchesPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
