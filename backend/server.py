@@ -1325,37 +1325,63 @@ async def get_promoted_ads(limit: int = 10):
 VIEW_MILESTONES = [100, 500, 1000, 5000, 10000]
 
 @api_router.get("/ads/{ad_id}")
-async def get_ad(ad_id: str):
+async def get_ad(ad_id: str, request: Request):
     ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
     if not ad:
         raise HTTPException(status_code=404, detail="Ad not found")
     
+    # Get visitor IP for unique view tracking
+    client_ip = request.client.host if request.client else None
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    
+    # Check if this IP already viewed this ad today
+    should_increment_views = False
+    if client_ip:
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        existing_view = await db.ad_views.find_one({
+            "ad_id": ad_id,
+            "ip": client_ip,
+            "date": {"$gte": today_start.isoformat()}
+        })
+        
+        if not existing_view:
+            # New unique view - log it
+            await db.ad_views.insert_one({
+                "ad_id": ad_id,
+                "ip": client_ip,
+                "date": datetime.now(timezone.utc).isoformat()
+            })
+            should_increment_views = True
+    
     # Get current views before increment
     old_views = ad.get("views", 0)
-    new_views = old_views + 1
     
-    # Increment views
-    await db.ads.update_one({"ad_id": ad_id}, {"$inc": {"views": 1}})
-    
-    # Check for milestone notifications
-    for milestone in VIEW_MILESTONES:
-        if old_views < milestone <= new_views:
-            # Get ad owner for notification
-            owner = await db.users.find_one({"user_id": ad.get("user_id")}, {"_id": 0, "password_hash": 0})
-            if owner and owner.get("email"):
-                asyncio.create_task(send_email_notification(
-                    owner["email"],
-                    "views_milestone",
-                    {
-                        "user_name": owner.get("name", "User"),
-                        "ad_title": ad.get("title", "Anunț"),
-                        "ad_id": ad_id,
-                        "milestone": milestone,
-                        "site_url": "https://x67digital.com"
-                    }
-                ))
-                logger.info(f"Views milestone notification sent for ad {ad_id}: {milestone} views")
-            break
+    # Only increment if unique view
+    if should_increment_views:
+        new_views = old_views + 1
+        await db.ads.update_one({"ad_id": ad_id}, {"$inc": {"views": 1}})
+        
+        # Check for milestone notifications
+        for milestone in VIEW_MILESTONES:
+            if old_views < milestone <= new_views:
+                # Get ad owner for notification
+                owner = await db.users.find_one({"user_id": ad.get("user_id")}, {"_id": 0, "password_hash": 0})
+                if owner and owner.get("email"):
+                    asyncio.create_task(send_email_notification(
+                        owner["email"],
+                        "views_milestone",
+                        {
+                            "user_name": owner.get("name", "User"),
+                            "ad_title": ad.get("title", "Anunț"),
+                            "ad_id": ad_id,
+                            "milestone": milestone,
+                            "site_url": "https://x67digital.com"
+                        }
+                    ))
+                    logger.info(f"Views milestone notification sent for ad {ad_id}: {milestone} views")
+                break
     
     # Enrich with category and city
     cat = next((c for c in CATEGORIES if c["id"] == ad.get("category_id")), None)
