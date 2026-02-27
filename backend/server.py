@@ -2151,6 +2151,14 @@ async def admin_change_user_password(user_id: str, request: Request):
     logger.info(f"Admin changed password for user {user_id}")
     return {"message": "Parola a fost schimbată cu succes"}
 
+@api_router.get("/users/{user_id}/public")
+async def get_public_user_info(user_id: str):
+    """Get public user information (name, picture) for chat"""
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "name": 1, "picture": 1, "user_id": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
 # ===================== ADMIN ANALYTICS & EXPORT =====================
 
 @api_router.get("/admin/analytics/dashboard")
