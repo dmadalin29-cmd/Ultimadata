@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class X67MarketplaceAPITester:
-    def __init__(self, base_url="https://digitalbazar-4.preview.emergentagent.com"):
+    def __init__(self, base_url="https://buy-sell-connect-5.preview.emergentagent.com"):
         self.base_url = base_url
         self.session = requests.Session()
         self.admin_token = None
