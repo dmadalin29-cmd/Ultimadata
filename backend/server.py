@@ -5324,6 +5324,46 @@ async def update_story_status(story_id: str, request: Request):
     await db.success_stories.update_one({"story_id": story_id}, {"$set": {"status": status}})
     return {"message": f"Story {status}"}
 
+@api_router.get("/admin/stories")
+async def get_admin_stories(request: Request, status: Optional[str] = None):
+    """Get all stories for admin moderation"""
+    await require_admin(request)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    stories = await db.success_stories.find(query, {"_id": 0}).sort([("created_at", -1)]).to_list(100)
+    return {"stories": stories}
+
+@api_router.delete("/admin/stories/{story_id}")
+async def delete_story(story_id: str, request: Request):
+    """Delete a story (admin only)"""
+    await require_admin(request)
+    await db.success_stories.delete_one({"story_id": story_id})
+    return {"message": "Story deleted"}
+
+@api_router.get("/admin/forum/threads")
+async def get_admin_forum_threads(request: Request):
+    """Get all forum threads for admin"""
+    await require_admin(request)
+    
+    threads = await db.forum_threads.find({}, {"_id": 0}).sort([("created_at", -1)]).to_list(100)
+    return {"threads": threads}
+
+@api_router.put("/admin/forum/threads/{thread_id}/pin")
+async def pin_forum_thread(thread_id: str, request: Request):
+    """Pin/unpin a forum thread (admin only)"""
+    await require_admin(request)
+    body = await request.json()
+    
+    is_pinned = body.get("is_pinned", False)
+    await db.forum_threads.update_one(
+        {"thread_id": thread_id},
+        {"$set": {"is_pinned": is_pinned}}
+    )
+    return {"message": "Thread updated"}
+
 # ===================== COMMUNITY FORUM =====================
 
 @api_router.get("/forum/categories")
