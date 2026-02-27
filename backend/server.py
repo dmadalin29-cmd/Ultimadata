@@ -1309,6 +1309,7 @@ async def create_ad(request: Request):
         "contact_phone": body.get("contact_phone"),
         "contact_email": body.get("contact_email", user["email"]),
         "images": body.get("images", []),
+        "video": body.get("video"),  # Video URL from Cloudinary
         "details": body.get("details", {}),
         "status": initial_status,
         "is_boosted": False,
@@ -1320,6 +1321,7 @@ async def create_ad(request: Request):
         "auto_topup": True,  # Auto-topup enabled by default for all categories
         "topup_rank": now.timestamp() if initial_status == "active" else 0,
         "last_topup": now.isoformat() if initial_status == "active" else None,
+        "ai_verification": ai_result,  # Store AI verification result
         "created_at": now.isoformat(),
         "updated_at": now.isoformat()
     }
