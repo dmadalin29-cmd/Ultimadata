@@ -1683,14 +1683,46 @@ async def payment_webhook(request: Request):
                     "last_topup": now.isoformat()
                 }}
             )
-        elif payment_type == "promote":
+        elif payment_type == "top_category":
+            # TOP în categorie - 7 zile
+            now = datetime.now(timezone.utc)
+            await db.ads.update_one(
+                {"ad_id": ad_id},
+                {"$set": {
+                    "is_boosted": True,
+                    "boost_expires_at": (now + timedelta(days=7)).isoformat(),
+                    "topup_rank": now.timestamp() + 1000000,  # Higher priority
+                    "last_topup": now.isoformat(),
+                    "boost_type": "top_category"
+                }}
+            )
+        elif payment_type == "homepage":
+            # Featured pe homepage - 7 zile
             await db.ads.update_one(
                 {"ad_id": ad_id},
                 {"$set": {
                     "is_promoted": True,
-                    "promote_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+                    "promote_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                    "promote_type": "homepage"
                 }}
             )
+        elif payment_type == "premium_monthly":
+            # Abonament Vânzător Pro - 30 zile
+            user_id = trns_data.get("user_id")
+            if user_id:
+                await db.users.update_one(
+                    {"user_id": user_id},
+                    {"$set": {
+                        "is_premium": True,
+                        "premium_expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                        "premium_started_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+                # Add premium badge
+                await db.users.update_one(
+                    {"user_id": user_id},
+                    {"$addToSet": {"badges": "premium_seller"}}
+                )
         
         # Send payment confirmation email
         if payment and ad_id:
