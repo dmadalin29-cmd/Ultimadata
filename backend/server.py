@@ -1664,18 +1664,35 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="Invalid file type. Allowed: JPG, PNG, WebP, GIF")
     
-    # Generate unique filename
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    filepath = UPLOAD_DIR / filename
-    
-    # Save file
+    # Read file content
     content = await file.read()
-    with open(filepath, "wb") as f:
-        f.write(content)
     
-    # Return URL - using /api/uploads for proper routing
-    return {"url": f"/api/uploads/{filename}", "filename": filename}
+    # Check file size (max 10MB)
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max: 10MB")
+    
+    try:
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            content,
+            folder="x67digital/ads",
+            resource_type="image",
+            transformation=[
+                {"quality": "auto:good"},
+                {"fetch_format": "auto"}
+            ]
+        )
+        
+        # Return Cloudinary URL
+        return {
+            "url": result["secure_url"],
+            "filename": result["public_id"],
+            "width": result.get("width"),
+            "height": result.get("height")
+        }
+    except Exception as e:
+        logger.error(f"Cloudinary upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error uploading image")
 
 @api_router.post("/upload/banner")
 async def upload_banner_media(request: Request, file: UploadFile = File(...)):
@@ -1688,11 +1705,8 @@ async def upload_banner_media(request: Request, file: UploadFile = File(...)):
     
     # Determine file type
     is_video = file.content_type in ALLOWED_VIDEO_TYPES
-    ext = file.filename.split(".")[-1] if "." in file.filename else ("mp4" if is_video else "jpg")
-    filename = f"banner_{uuid.uuid4().hex}.{ext}"
-    filepath = UPLOAD_DIR / filename
     
-    # Save file
+    # Read file content
     content = await file.read()
     
     # Check file size (max 50MB for videos, 10MB for images)
@@ -1700,14 +1714,23 @@ async def upload_banner_media(request: Request, file: UploadFile = File(...)):
     if len(content) > max_size:
         raise HTTPException(status_code=400, detail=f"File too large. Max: {max_size // (1024*1024)}MB")
     
-    with open(filepath, "wb") as f:
-        f.write(content)
-    
-    return {
-        "url": f"/api/uploads/{filename}", 
-        "filename": filename,
-        "is_video": is_video,
-        "content_type": file.content_type
+    try:
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            content,
+            folder="x67digital/banners",
+            resource_type="video" if is_video else "image",
+            transformation=[
+                {"quality": "auto:good"},
+                {"fetch_format": "auto"}
+            ] if not is_video else []
+        )
+        
+        return {
+            "url": result["secure_url"],
+            "filename": result["public_id"],
+            "is_video": is_video,
+            "content_type": file.content_type
     }
 
 # ===================== TOPUP / BOOST SYSTEM =====================
