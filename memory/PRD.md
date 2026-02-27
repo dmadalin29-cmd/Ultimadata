@@ -5,7 +5,7 @@ Build a classified ads marketplace website (x67digital.com) with:
 - Categories: Escorts (with boost/promote), Real Estate (apartments, houses, land), Cars (all brands/models), Jobs, Electronics, Fashion, Services, Animals
 - All Romanian cities
 - Photo uploads for ads
-- Payment via Viva Wallet (2€ posting, 5€ promotion) - CURRENTLY DISABLED
+- Payment via Viva Wallet - Top-Up Escorte 10 RON (terminal 9750)
 - Escort boost feature (pay to appear first)
 - Admin panel: users, ads approval, banners management
 - Rotating banner system every 4-5 seconds
@@ -21,20 +21,30 @@ Build a classified ads marketplace website (x67digital.com) with:
 - User authentication (JWT + Google OAuth)
 - Ad creation with multi-step form and photo upload
 - Category-based browsing with filters (city, subcategory, price, sort)
-- Payment integration for ad posting (2€) and promotion (5€)
+- Payment integration for ad posting (GRATUIT) and Top-Up Escorte (10 RON)
 - Admin dashboard for content moderation
 - Email notifications for user actions
 - Responsive dark-themed UI
 
-## Bug Fix (Feb 16, 2026) - Critical Production Fix
-**Problem:** Site-ul live afișa pagină albă după push-ul anterior pe GitHub
-**Cauză:** Biblioteca `emergentintegrations` a fost actualizată și funcția `chat()` a fost înlocuită cu clasa `LlmChat`
-**Soluție:** 
-- Actualizat importul de la `from emergentintegrations.llm.chat import chat, Message` la `from emergentintegrations.llm.chat import LlmChat, UserMessage`
-- Actualizat endpoint-urile `/api/chatbot` și `/api/generate-description` pentru a folosi noua clasă `LlmChat`
-**Status:** Codul a fost push-at pe GitHub (ambele repo-uri: Ultimadata și x67frontend)
+## Latest Updates (Feb 27, 2026)
 
-## What's Been Implemented (Feb 16, 2026)
+### Features Implemented:
+1. **Cookie Consent Banner** - GDPR compliant with personalization options
+2. **Theme Toggle Removed** - Site is now dark-only
+3. **FAQ Updated** - Reflects free ad posting, paid Top-Up for Escorts
+4. **Image Lightbox/Zoom** - Click on ad images to enlarge
+5. **Unique Views Tracking** - Views counted per unique IP per day (no refresh counting)
+6. **Escorts Top-Up Payment** - 10 RON via Viva Wallet (unlimited per day)
+7. **Fashion Category Image** - Updated to elegant runway image
+8. **Mobile Responsive** - Improved grid and spacing for all devices
+9. **PWA Install** - Installable on Android/iOS from browser
+
+### Technical Changes:
+- New `ad_views` collection in MongoDB for IP tracking
+- New `/api/ads/{ad_id}/topup-paid` endpoint for Viva Wallet payments
+- Removed theme toggle from Header component
+- Added ImageLightbox component to AdDetailPage
+- Improved responsive grid classes (grid-cols-2 sm:grid-cols-2 lg:grid-cols-4)
 
 ### Latest Update - 7 Major Features (Feb 16, 2026)
 1. ✅ **Dark/Light Mode Toggle** - Buton soare/lună în header + meniu dropdown, preferință salvată în localStorage
