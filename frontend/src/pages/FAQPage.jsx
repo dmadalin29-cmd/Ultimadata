@@ -74,13 +74,21 @@ const faqs = [
     ]
   },
   {
-    category: "Plăți",
+    category: "Plăți și Escrow",
     icon: CreditCard,
     color: "text-purple-500",
     questions: [
       {
         q: "Ce metode de plată acceptați?",
-        a: "Plățile pentru Top-Up se procesează prin Viva Wallet și acceptăm carduri Visa, Mastercard și Maestro."
+        a: "Plățile se procesează prin Viva Wallet și acceptăm carduri Visa, Mastercard și Maestro."
+      },
+      {
+        q: "Ce este sistemul Escrow (Plată Sigură)?",
+        a: "Escrow este un sistem de protecție pentru tranzacții. Când cumperi prin Escrow, banii tăi sunt păstrați în siguranță de platformă până când confirmi că ai primit produsul. Comisionul este de 3%."
+      },
+      {
+        q: "Cum funcționează plata prin Escrow?",
+        a: "1) Cumpărătorul plătește în escrow → 2) Vânzătorul livrează produsul → 3) Cumpărătorul confirmă primirea → 4) Banii sunt eliberați către vânzător. În caz de problemă, poți deschide o dispută."
       },
       {
         q: "Este sigură plata online?",
