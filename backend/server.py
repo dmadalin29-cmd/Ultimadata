@@ -1219,6 +1219,53 @@ async def get_moto_brands():
 
 # ===================== ADS ENDPOINTS =====================
 
+async def ai_verify_ad(title: str, description: str, category_id: str) -> dict:
+    """Use AI to verify ad content for spam, inappropriate content, and quality"""
+    try:
+        llm_chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            model="gpt-4o-mini"
+        )
+        
+        prompt = f"""Analizează următorul anunț și răspunde în format JSON:
+
+Titlu: {title}
+Descriere: {description}
+Categorie: {category_id}
+
+Verifică:
+1. Este spam sau conținut duplicat/generic?
+2. Conține informații false sau înșelătoare?
+3. Conține limbaj nepotrivit sau ofensator?
+4. Are calitate scăzută (text foarte scurt, fără sens)?
+5. Conține date de contact în descriere (telefon, email, link-uri externe)?
+
+Răspunde DOAR cu JSON în formatul:
+{{
+    "is_valid": true/false,
+    "spam_score": 0-100,
+    "quality_score": 0-100,
+    "issues": ["problema1", "problema2"],
+    "recommendation": "approve" sau "review" sau "reject",
+    "reason": "explicație scurtă"
+}}"""
+        
+        response = await llm_chat.send_async(prompt)
+        response_text = response.content if hasattr(response, 'content') else str(response)
+        
+        # Parse JSON from response
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        if json_match:
+            result = json.loads(json_match.group())
+            return result
+        
+        return {"is_valid": True, "recommendation": "approve", "spam_score": 0, "quality_score": 80}
+    except Exception as e:
+        logger.error(f"AI verification error: {str(e)}")
+        # Default to approve if AI fails
+        return {"is_valid": True, "recommendation": "approve", "spam_score": 0, "quality_score": 50, "ai_error": True}
+
 @api_router.post("/ads")
 async def create_ad(request: Request):
     user = await require_auth(request)
