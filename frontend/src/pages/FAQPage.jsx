@@ -15,7 +15,7 @@ const faqs = [
       },
       {
         q: "Am uitat parola. Cum o pot recupera?",
-        a: "Momentan, te rugăm să ne contactezi la contact@x67digital.com pentru resetarea parolei. Vom implementa în curând funcția de recuperare automată."
+        a: "Apasă pe \"Am uitat parola\" din pagina de autentificare și introdu adresa de email. Vei primi un link de resetare pe email în câteva minute."
       },
       {
         q: "Cum îmi pot șterge contul?",
@@ -30,11 +30,11 @@ const faqs = [
     questions: [
       {
         q: "Cât costă să public un anunț?",
-        a: "Publicarea unui anunț costă 11,40 RON (TVA inclus). Plata se face securizat prin Viva Wallet."
+        a: "Publicarea anunțurilor este GRATUITĂ! Poți publica oricâte anunțuri dorești fără niciun cost."
       },
       {
         q: "Ce categorii de anunțuri sunt disponibile?",
-        a: "Oferim categorii variate: Imobiliare (apartamente, case, terenuri), Auto & Moto (cu toate mărcile și modelele), Locuri de muncă (20+ subcategorii), Electronice, Modă, Servicii, Animale și multe altele."
+        a: "Oferim categorii variate: Escorte, Imobiliare (apartamente, case, terenuri), Auto & Moto (cu toate mărcile și modelele), Locuri de muncă (20+ subcategorii), Electronice, Modă, Servicii, Animale și multe altele."
       },
       {
         q: "Câte fotografii pot adăuga la un anunț?",
@@ -42,49 +42,49 @@ const faqs = [
       },
       {
         q: "Cât timp rămâne activ anunțul meu?",
-        a: "Anunțurile rămân active timp de 30 de zile de la aprobare. După expirare, poți republica anunțul."
+        a: "Anunțurile rămân active timp de 30 de zile de la aprobare. După expirare, poți republica anunțul gratuit."
       },
       {
-        q: "De ce anunțul meu nu a fost aprobat?",
-        a: "Anunțurile sunt verificate de echipa noastră. Motivele respingerii pot include: informații incomplete, conținut necorespunzător, încălcarea regulamentului sau fotografii de calitate slabă."
+        q: "Anunțurile sunt aprobate automat?",
+        a: "Da! Anunțurile din toate categoriile (cu excepția Escorte) sunt aprobate automat și publicate instant. Anunțurile din categoria Escorte sunt verificate manual de echipa noastră pentru a asigura calitatea."
       }
     ]
   },
   {
-    category: "Plăți și Tarife",
+    category: "Promovare și Top-Up",
+    icon: Zap,
+    color: "text-fuchsia-500",
+    questions: [
+      {
+        q: "Ce înseamnă \"Top-Up\" sau \"Ridicare anunț\"?",
+        a: "Top-Up-ul (10 RON) este disponibil pentru categoria Escorte și face ca anunțul tău să apară primul în lista categoriei. Poți da top-up de câte ori dorești pe zi!"
+      },
+      {
+        q: "Cum fac Top-Up la anunț?",
+        a: "Accesează anunțul tău și apasă butonul \"Top-Up\" sau \"Ridică anunțul\". Plata se face securizat prin Viva Wallet cu cardul."
+      },
+      {
+        q: "Cât durează efectul Top-Up-ului?",
+        a: "Anunțul va apărea primul în listă până când alt utilizator face și el Top-Up. De aceea poți da Top-Up de mai multe ori pe zi pentru a rămâne în top!"
+      }
+    ]
+  },
+  {
+    category: "Plăți",
     icon: CreditCard,
     color: "text-purple-500",
     questions: [
       {
         q: "Ce metode de plată acceptați?",
-        a: "Plățile se procesează prin Viva Wallet și acceptăm carduri Visa, Mastercard și Maestro."
+        a: "Plățile pentru Top-Up se procesează prin Viva Wallet și acceptăm carduri Visa, Mastercard și Maestro."
       },
       {
-        q: "Pot primi restituirea banilor?",
-        a: "Restituirile sunt posibile doar dacă anunțul nu a fost încă aprobat. După aprobare și publicare, nu oferim restituiri."
+        q: "Este sigură plata online?",
+        a: "Da! Folosim Viva Wallet, unul dintre cele mai sigure procesatori de plăți din Europa, cu criptare SSL și conformitate PCI-DSS."
       },
       {
-        q: "Primesc factură pentru plată?",
-        a: "Da, vei primi automat confirmare pe email după fiecare plată. Pentru factură fiscală, contactează-ne la contact@x67digital.com."
-      }
-    ]
-  },
-  {
-    category: "Promovare și Ridicare",
-    icon: Zap,
-    color: "text-fuchsia-500",
-    questions: [
-      {
-        q: "Ce înseamnă \"Promovare anunț\"?",
-        a: "Promovarea (29,99 RON) face ca anunțul tău să apară pe prima pagină a site-ului, în secțiunea \"Anunțuri Promovate\", timp de 7 zile."
-      },
-      {
-        q: "Ce înseamnă \"Ridicare anunț\"?",
-        a: "Ridicarea (7,00 RON) este disponibilă pentru categoria Escorte și face ca anunțul să apară primul în lista categoriei timp de 24 de ore."
-      },
-      {
-        q: "Pot promova anunțul de mai multe ori?",
-        a: "Da, poți promova sau ridica anunțul oricând dorești. Fiecare promovare extinde perioada de vizibilitate."
+        q: "Primesc confirmare după plată?",
+        a: "Da, vei primi automat confirmare pe email după fiecare plată."
       }
     ]
   },
@@ -102,8 +102,8 @@ const faqs = [
         a: "Pe pagina fiecărui anunț există butonul \"Raportează anunțul\". De asemenea, ne poți contacta direct la contact@x67digital.com."
       },
       {
-        q: "Verificați utilizatorii platformei?",
-        a: "Nu verificăm identitatea utilizatorilor. Recomandăm prudență în tranzacții și verificarea informațiilor înainte de orice achiziție."
+        q: "Numărul meu de telefon este vizibil?",
+        a: "Numărul de telefon este vizibil doar pentru utilizatorii care sunt logați și apasă pe \"Arată contact\". Acest lucru protejează împotriva spam-ului."
       }
     ]
   },
@@ -117,7 +117,16 @@ const faqs = [
         a: "Verifică dimensiunea fișierelor (max 5MB) și formatul (JPG, PNG, WebP). Încearcă să ștergi cache-ul browserului sau folosește alt browser."
       },
       {
-        q: "Nu pot finaliza plata. Ce fac?",
+        q: "Pot instala X67 ca aplicație pe telefon?",
+        a: "Da! X67 este o aplicație PWA. Pe Android/iOS, deschide site-ul în Chrome/Safari și apasă \"Adaugă pe ecranul principal\" sau \"Instalează aplicația\" din meniu."
+      },
+      {
+        q: "Cum contactez suportul?",
+        a: "Ne poți contacta oricând la contact@x67digital.com sau folosind chatbot-ul nostru AI disponibil în colțul din dreapta-jos al ecranului."
+      }
+    ]
+  }
+];
         a: "Verifică datele cardului și că ai suficiente fonduri. Dacă problema persistă, încearcă alt card sau contactează-ne pentru asistență."
       },
       {
