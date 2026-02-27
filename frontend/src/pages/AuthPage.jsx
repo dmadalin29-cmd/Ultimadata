@@ -291,7 +291,7 @@ export default function AuthPage() {
               {/* Google Login */}
               <Button
                 variant="outline"
-                className="w-full h-12 mb-6 border-white/10 text-white hover:bg-white/5"
+                className="w-full h-14 sm:h-12 mb-6 border-white/10 text-white hover:bg-white/5 text-base touch-manipulation"
                 onClick={handleGoogleLogin}
                 data-testid="google-login-btn"
               >
