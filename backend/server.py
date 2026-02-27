@@ -1369,11 +1369,12 @@ async def get_ads(
         if city:
             ad["city_name"] = city["name"]
         
-        # Add seller rating
+        # Add seller rating and badges
         seller_info = users_with_rating.get(ad.get("user_id"))
         if seller_info:
             ad["user_rating"] = seller_info.get("avg_rating")
             ad["user_reviews"] = seller_info.get("total_reviews")
+            ad["user_badges"] = seller_info.get("badges", [])
     
     return {
         "ads": ads,
