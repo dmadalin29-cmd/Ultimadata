@@ -18,10 +18,20 @@ import httpx
 import json
 import asyncio
 import resend
+import cloudinary
+import cloudinary.uploader
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dzrqifaet'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY', '862251514396123'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET', 'el-zk7aHbFaLc-CZSg_HfrVjpG0'),
+    secure=True
+)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
