@@ -1717,6 +1717,7 @@ export default function AdminPage() {
             <Route index element={<DashboardOverview />} />
             <Route path="users" element={<UsersManagement />} />
             <Route path="ads" element={<AdsManagement />} />
+            <Route path="reports" element={<ReportsManagement />} />
             <Route path="banners" element={<BannersManagement />} />
             <Route path="forum" element={<ForumModeration />} />
             <Route path="stories" element={<StoriesModeration />} />
