@@ -1431,6 +1431,201 @@ function StoriesModeration() {
   );
 }
 
+// Reports Management
+function ReportsManagement() {
+  const [reports, setReports] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("pending");
+  const [processing, setProcessing] = useState(null);
+
+  useEffect(() => {
+    fetchReports();
+  }, [filter]);
+
+  const fetchReports = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/admin/reports?status=${filter}`,
+        { withCredentials: true }
+      );
+      setReports(response.data.reports);
+      setStats(response.data.stats);
+    } catch (error) {
+      toast.error("Eroare la încărcarea rapoartelor");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAction = async (reportId, status, action) => {
+    const adminNotes = action === "none" ? "" : prompt("Note admin (opțional):");
+    
+    setProcessing(reportId);
+    try {
+      await axios.put(
+        `${API_URL}/api/admin/reports/${reportId}`,
+        { status, action, admin_notes: adminNotes || "" },
+        { withCredentials: true }
+      );
+      toast.success("Raport actualizat!");
+      fetchReports();
+    } catch (error) {
+      toast.error("Eroare la actualizare");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const statusColors = {
+    pending: "bg-yellow-500/20 text-yellow-400",
+    reviewed: "bg-blue-500/20 text-blue-400",
+    dismissed: "bg-slate-500/20 text-slate-400",
+    action_taken: "bg-green-500/20 text-green-400"
+  };
+
+  if (loading) {
+    return <div className="animate-pulse space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="h-24 bg-[#121212] rounded-xl" />
+      ))}
+    </div>;
+  }
+
+  return (
+    <div className="space-y-6" data-testid="reports-management">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Rapoarte Anunțuri</h1>
+          <p className="text-slate-400">Gestionează rapoartele utilizatorilor</p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { key: "pending", label: "În Așteptare", color: "yellow" },
+          { key: "reviewed", label: "Verificate", color: "blue" },
+          { key: "action_taken", label: "Acțiune Luată", color: "green" },
+          { key: "dismissed", label: "Respinse", color: "slate" }
+        ].map((item) => (
+          <div 
+            key={item.key}
+            className={`p-4 rounded-xl border cursor-pointer transition-all ${
+              filter === item.key 
+                ? `bg-${item.color}-500/20 border-${item.color}-500/50` 
+                : 'bg-[#0A0A0A] border-white/5 hover:border-white/10'
+            }`}
+            onClick={() => setFilter(item.key)}
+          >
+            <p className={`text-2xl font-bold ${filter === item.key ? `text-${item.color}-400` : 'text-white'}`}>
+              {stats[item.key] || 0}
+            </p>
+            <p className="text-sm text-slate-400">{item.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Reports List */}
+      <div className="space-y-4">
+        {reports.map((report) => (
+          <div 
+            key={report.report_id}
+            className="bg-[#0A0A0A] border border-white/5 rounded-xl p-5"
+          >
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`px-2 py-1 rounded-full text-xs ${statusColors[report.status]}`}>
+                    {report.status === "pending" ? "În Așteptare" : 
+                     report.status === "reviewed" ? "Verificat" :
+                     report.status === "dismissed" ? "Respins" : "Acțiune Luată"}
+                  </span>
+                  <span className="text-slate-500 text-xs">
+                    {new Date(report.created_at).toLocaleString("ro-RO")}
+                  </span>
+                </div>
+                
+                <h3 className="text-white font-medium mb-1">
+                  Anunț: <Link to={`/ad/${report.ad_id}`} className="text-blue-400 hover:underline" target="_blank">
+                    {report.ad_title}
+                  </Link>
+                </h3>
+                
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                  <span className="text-red-400 font-medium">{report.reason_label}</span>
+                </div>
+                
+                {report.description && (
+                  <p className="text-slate-400 text-sm bg-white/5 p-3 rounded-lg mt-2">
+                    "{report.description}"
+                  </p>
+                )}
+                
+                {report.admin_notes && (
+                  <p className="text-slate-500 text-sm mt-2 italic">
+                    Admin: {report.admin_notes}
+                  </p>
+                )}
+              </div>
+              
+              {/* Actions */}
+              {report.status === "pending" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAction(report.report_id, "dismissed", "none")}
+                    disabled={processing === report.report_id}
+                    className="border-slate-500/30 text-slate-400 hover:bg-slate-500/10"
+                  >
+                    Respinge
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAction(report.report_id, "action_taken", "warn")}
+                    disabled={processing === report.report_id}
+                    className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+                  >
+                    Avertizează
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAction(report.report_id, "action_taken", "suspend")}
+                    disabled={processing === report.report_id}
+                    className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                  >
+                    Suspendă
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleAction(report.report_id, "action_taken", "delete")}
+                    disabled={processing === report.report_id}
+                    className="bg-red-600 hover:bg-red-500"
+                  >
+                    Șterge Anunț
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        
+        {reports.length === 0 && (
+          <div className="text-center py-12 text-slate-500 bg-[#0A0A0A] border border-white/5 rounded-xl">
+            <Flag className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            Nu există rapoarte {filter === "pending" ? "în așteptare" : ""}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Main Admin Page
 export default function AdminPage() {
   const { user } = useAuth();
