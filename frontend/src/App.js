@@ -39,6 +39,7 @@ import MapPage from "./pages/MapPage";
 // PWA & Notifications
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider } from "./i18n/LanguageContext";
 import PWAPrompt from "./components/PWAPrompt";
 import ChatbotWidget from "./components/ChatbotWidget";
 import CookieConsent from "./components/CookieConsent";
