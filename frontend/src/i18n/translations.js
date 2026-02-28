@@ -121,6 +121,14 @@ export const translations = {
     popularCategories: "Categorii Populare",
     featuredAds: "Anunțuri Promovate",
     recentAds: "Anunțuri Recente",
+    findWhatYouNeed: "Găsește exact ce cauți în categoriile noastre",
+    popularOffers: "Cele mai populare oferte",
+    newestAds: "Cele mai noi anunțuri",
+    viewAll: "Vezi toate",
+    addFirstAd: "Adaugă primul anunț",
+    haveToSell: "Ai ceva de vândut?",
+    postInMinutes: "Postează anunțul tău în câteva minute și ajunge la mii de cumpărători potențiali.",
+    publishFree: "Publică Gratuit",
     
     // Create Ad
     step1: "Categorie & Locație",
@@ -283,6 +291,14 @@ export const translations = {
     popularCategories: "Popular Categories",
     featuredAds: "Featured Ads",
     recentAds: "Recent Ads",
+    findWhatYouNeed: "Find exactly what you need in our categories",
+    popularOffers: "Most popular offers",
+    newestAds: "Latest ads",
+    viewAll: "View all",
+    addFirstAd: "Add the first ad",
+    haveToSell: "Have something to sell?",
+    postInMinutes: "Post your ad in minutes and reach thousands of potential buyers.",
+    publishFree: "Publish Free",
     
     // Create Ad
     step1: "Category & Location",
