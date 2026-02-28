@@ -20,7 +20,7 @@ Build a classified ads marketplace website (x67digital.com) with:
 - User authentication (JWT + Google OAuth)
 - Ad creation with multi-step form and photo upload
 - Category-based browsing with filters
-- Payment integration (currently FREE)
+- Payment integration (Viva Wallet)
 - Admin dashboard for content moderation
 - Email notifications for user actions
 - Responsive dark-themed UI
@@ -28,98 +28,89 @@ Build a classified ads marketplace website (x67digital.com) with:
 
 ---
 
-## Latest Updates (Feb 28, 2026)
+## Latest Session Updates (Feb 28, 2026)
 
-### SESSION 6 - Multi-Language Feature Completion:
-
-**🌍 Multi-Language System - COMPLETED:**
-- Fixed LanguageContext to NOT use window.location.reload()
-- Language changes now happen dynamically via React state
-- Language preference persisted in localStorage (key: `x67_language`)
+### ✅ Multi-Language Feature - COMPLETED
+- Fixed LanguageContext to use React state (no page reload)
+- Language preference persisted in localStorage
 - Translations added for all major components:
-  - Header.jsx - navigation, menus, search placeholder
-  - Footer.jsx - links, description, copyright
-  - HomePage.jsx - all sections translated
-  - AuthPage.jsx - login/register forms
-  - AdCard.jsx - price labels, badges
-- Support for date formatting (date-fns locale switching)
+  - Header, Footer, HomePage, AuthPage, AdCard
+- Support for date formatting with locale switching
 - **Tested: 100% pass rate**
 
-**Files Updated:**
-- `frontend/src/i18n/LanguageContext.jsx` - removed page reload hack
-- `frontend/src/i18n/translations.js` - expanded with 200+ translation keys
-- `frontend/src/components/Header.jsx` - added t() for all text
-- `frontend/src/components/Footer.jsx` - added t() for all text
-- `frontend/src/pages/HomePage.jsx` - added t() for all sections
-- `frontend/src/pages/AuthPage.jsx` - added t() for all forms
-- `frontend/src/components/AdCard.jsx` - added t() for badges/prices
+### ✅ Viva Wallet Webhook - CONFIGURED
+- Webhook URL: `https://ultimadata-production.up.railway.app/api/payments/webhook`
+- Verification Key: `475FFE73819D67134BBB2D6690A9023714C14E2E`
+- Event: "Plată tranzacție creată" (Transaction Payment Created)
+
+### ✅ Major Refactoring - COMPLETED
+Extracted 9 route modules from monolithic server.py (2327 lines total):
+
+| Module | Lines | Functionality |
+|--------|-------|---------------|
+| `admin.py` | 616 | Dashboard, users, ads, analytics, export, reports |
+| `auth.py` | 400 | Authentication, register, login, Google OAuth |
+| `content.py` | 257 | Blog/Forum/Stories |
+| `payments.py` | 252 | Viva Wallet integration, webhooks |
+| `public_api.py` | 225 | Public API (rate limited) |
+| `escrow.py` | 182 | Secure payments |
+| `loyalty.py` | 146 | Points and levels system |
+| `seller.py` | 122 | Seller dashboard |
+| `referral.py` | 104 | Referral program |
+
+**Testing Results: 100% pass rate (30/30 backend tests, frontend OK)**
 
 ---
 
-## Previous Sessions Summary
+## Architecture
 
-### SESSION 5 Features (Completed):
-- Interactive Map (Leaflet.js + OpenStreetMap)
-- Ad Reporting System
-- Graphical Admin Dashboard (Recharts)
-- Public API v1
-- SEO Content Generation
-- Performance Optimizations
+### Backend Structure
+```
+/app/backend/
+├── server.py (6323 lines - main entry, includes modules)
+├── routes/
+│   ├── __init__.py
+│   ├── admin.py (616)
+│   ├── auth.py (400)
+│   ├── content.py (257)
+│   ├── payments.py (252)
+│   ├── public_api.py (225)
+│   ├── escrow.py (182)
+│   ├── loyalty.py (146)
+│   ├── seller.py (122)
+│   └── referral.py (104)
+├── models/
+├── utils/
+└── tests/
+    └── test_refactored_routes.py
+```
 
-### SESSION 4 Features (Completed):
-- Paid Promotions System
-- Premium Subscriptions
-- Escrow Payment System
-- AI Auto-moderation
-- Video in Ads
-- Blog & Stories
-- Community Forum
-- Banner Ads System
-
-### SESSION 3 Features (Completed):
-- Seller Dashboard
-- Loyalty Program
-- Referral System
-
-### SESSION 2 Features (Completed):
-- Cloudinary Integration
-- Dark Theme
-- PWA iOS Fixes
-- CORS Configuration
-
-### SESSION 1 Features (Completed):
-- Core marketplace functionality
-- Viva Wallet Top-Up
-- Cookie Consent
-- Image Lightbox
-- View tracking
-- PWA Install
-
----
-
-## Known Issues
-
-### P0 - CRITICAL (Production Only)
-**Authentication issue on production (x67digital.com)**
-- Users report being logged out when sending messages
-- Cookie cross-domain issue between Hostinger (frontend) and Railway (backend)
-- Preview environment works correctly
-- **Root cause:** Cross-domain cookie handling in browser
-- **Recommended fix:** Configure backend cookies with proper domain settings or move to same-domain setup
-
-### P1 - Urgent
-**Backend Refactoring Needed**
-- `server.py` has grown to 6278+ lines
-- Needs to be split into separate route files
-- Follow `REFACTORING_GUIDE.md`
+### Frontend Structure
+```
+/app/frontend/src/
+├── components/
+│   ├── ui/ (Shadcn components)
+│   ├── Header.jsx
+│   ├── Footer.jsx
+│   └── AdCard.jsx
+├── pages/
+│   ├── HomePage.jsx
+│   ├── AuthPage.jsx
+│   ├── AdminPage.jsx
+│   └── ...
+├── i18n/
+│   ├── LanguageContext.jsx
+│   └── translations.js (200+ keys, RO/EN)
+└── App.js
+```
 
 ---
 
 ## Technical Stack
-- **Backend**: FastAPI, MongoDB, Python 3.11
+- **Backend**: FastAPI, Python 3.11
 - **Frontend**: React 19, TailwindCSS, Shadcn UI
 - **Database**: MongoDB Atlas
-- **Payment**: Viva Wallet (disabled - ads are FREE)
+- **Payment**: Viva Wallet
 - **Email**: Resend
 - **Auth**: JWT + Emergent Google OAuth
 - **Image Storage**: Cloudinary
@@ -127,34 +118,90 @@ Build a classified ads marketplace website (x67digital.com) with:
 - **Charts**: Recharts
 
 ## Third-Party Integrations
-- Viva Wallet (payments)
-- Cloudinary (images/videos)
-- Resend (emails)
-- Emergent Google Auth
-- MongoDB Atlas
-- Twilio (WhatsApp notifications)
-- Emergent Integrations (AI moderation)
-- Leaflet + OpenStreetMap (maps)
-- Recharts (charts)
+| Service | Purpose | Status |
+|---------|---------|--------|
+| Viva Wallet | Payments | ✅ Configured with webhook |
+| Cloudinary | Images/Videos | ✅ Active |
+| Resend | Emails | ✅ Active |
+| Emergent Google Auth | OAuth | ✅ Active |
+| MongoDB Atlas | Database | ✅ Active |
+| Twilio | WhatsApp | ✅ Active |
+| Emergent Integrations | AI moderation | ✅ Active |
+| Leaflet + OpenStreetMap | Maps | ✅ Active |
+| Recharts | Charts | ✅ Active |
 
-## Environment Variables
-```
-# Backend
-MONGO_URL, DB_NAME, VIVA_*, RESEND_API_KEY, SENDER_EMAIL
-EMERGENT_LLM_KEY, CLOUDINARY_URL, TWILIO_*
+## Deployment
+- **Frontend**: Hostinger (x67digital.com)
+- **Backend**: Railway (ultimadata-production.up.railway.app)
+- **Database**: MongoDB Atlas
 
-# Frontend
-REACT_APP_BACKEND_URL
-```
+---
+
+## Test Reports
+- `/app/test_reports/iteration_13.json` - Refactoring tests (100% pass)
+- `/app/test_reports/iteration_12.json` - Multi-language tests (100% pass)
+- `/app/backend/tests/test_refactored_routes.py` - 30 comprehensive tests
 
 ## Test Credentials
 - **Admin**: d.madalin29@gmail.com / admin123
 - **Test User**: test123@test.com / test1234
 
-## Test Reports
-- `/app/test_reports/iteration_12.json` - Multi-language tests (100% pass)
-- `/app/test_reports/iteration_11.json` - Map & Reports tests
-- `/app/test_reports/iteration_10.json` - Previous tests
+---
+
+## API Endpoints Summary
+
+### Auth (`/api/auth/`)
+- POST `/register`, `/login`, `/logout`
+- GET `/me`, `/token`
+- POST `/google-session`, `/forgot-password`, `/reset-password`
+- PUT `/profile`
+
+### Payments (`/api/payments/`)
+- POST `/create-order`
+- GET/POST `/webhook`
+- GET `/verify/{order_code}`
+
+### Admin (`/api/admin/`)
+- GET `/users`, `/ads`, `/stats`, `/reports`
+- PUT `/users/{id}`, `/ads/{id}/status`, `/reports/{id}`
+- DELETE `/users/{id}`, `/banners/{id}`
+- GET `/analytics/dashboard`, `/export/users`, `/export/ads`
+- GET/POST `/categories`, `/verification-requests`
+
+### Public API (`/api/public/v1/`)
+- GET `/status`, `/ads`, `/categories`, `/cities`, `/search`
+- Rate limited: 100 requests/minute per IP
+
+### Loyalty (`/api/loyalty/`)
+- GET `/status`, `/leaderboard`
+- POST `/claim-daily`
+
+### Seller (`/api/seller/`)
+- GET `/dashboard`, `/earnings`
+
+### Referral (`/api/referral/`)
+- GET `/code`, `/list`
+- POST `/apply`
+
+### Escrow (`/api/escrow/`)
+- POST `/create`
+- GET `/my-transactions`
+- POST `/{id}/confirm-delivery`, `/{id}/dispute`
+
+---
+
+## Known Issues
+
+### P0 - Critical (Production)
+**Cross-domain authentication issue on x67digital.com**
+- Users report being logged out when sending messages
+- Cause: Cookie handling between Hostinger and Railway domains
+- Preview environment works correctly
+- **Recommendation**: Consider same-domain setup or investigate SameSite cookie policies
+
+### Technical Debt
+- Server.py still has duplicate code (can be removed after thorough testing)
+- Server.py: 6323 lines (should be ~4000 after cleanup)
 
 ---
 
@@ -164,15 +211,15 @@ REACT_APP_BACKEND_URL
 - [ ] Fix production authentication (cross-domain cookies)
 
 ### P1 (High)
-- [ ] Refactor server.py into separate route files
+- [ ] Remove duplicate code from server.py
 - [ ] Video Chat (WebRTC)
-- [ ] Browser Push Notifications (free alternative)
+- [ ] Browser Push Notifications
 
 ### P2 (Medium)
 - [ ] Verify PWA iPhone layout fix
-- [ ] Add more languages support
+- [ ] Add more languages (DE, FR, IT)
 - [ ] Rich-text editor for Blog/Forum
-- [ ] Public API documentation page
+- [ ] Public API documentation page (Swagger)
 
 ### P3 (Low)
 - [ ] Auction system
@@ -181,59 +228,98 @@ REACT_APP_BACKEND_URL
 
 ---
 
-## API Endpoints Summary
+## Completed Features (All Sessions)
 
-### Auth
-- POST `/api/auth/register`
-- POST `/api/auth/login`
-- GET `/api/auth/me`
-- POST `/api/auth/logout`
-- POST `/api/auth/google-session`
-- POST `/api/auth/forgot-password`
-- POST `/api/auth/reset-password`
+### Session 6 (Current)
+- ✅ Multi-language system (RO/EN)
+- ✅ Viva Wallet webhook configuration
+- ✅ Major backend refactoring (9 modules)
+- ✅ Comprehensive testing (30 tests)
 
-### Ads
-- GET/POST `/api/ads`
-- GET/PUT/DELETE `/api/ads/{ad_id}`
-- GET `/api/ads/promoted`
-- POST `/api/ads/{ad_id}/topup`
+### Session 5
+- ✅ Interactive Map (Leaflet.js)
+- ✅ Ad Reporting System
+- ✅ Graphical Admin Dashboard (Recharts)
+- ✅ Public API v1
+- ✅ SEO Content Generation
 
-### Public API
-- GET `/api/public/v1/status`
-- GET `/api/public/v1/ads`
-- GET `/api/public/v1/categories`
-- GET `/api/public/v1/cities`
-- GET `/api/public/v1/search`
+### Session 4
+- ✅ Paid Promotions System
+- ✅ Premium Subscriptions
+- ✅ Escrow Payment System
+- ✅ AI Auto-moderation
+- ✅ Video in Ads
+- ✅ Blog & Stories
+- ✅ Community Forum
+- ✅ Banner Ads System
 
-### Admin
-- GET `/api/admin/users`
-- GET `/api/admin/reports`
-- PUT `/api/admin/reports/{id}`
-- GET `/api/admin/stats`
+### Session 3
+- ✅ Seller Dashboard
+- ✅ Loyalty Program
+- ✅ Referral System
 
-### Location
-- GET `/api/judete`
-- GET `/api/localitati`
+### Session 2
+- ✅ Cloudinary Integration
+- ✅ Dark Theme
+- ✅ PWA iOS Fixes
+- ✅ CORS Configuration
 
-### Messages
-- GET/POST `/api/messages`
-- GET `/api/messages/unread-count`
+### Session 1
+- ✅ Core marketplace functionality
+- ✅ Viva Wallet Top-Up
+- ✅ Cookie Consent
+- ✅ Image Lightbox
+- ✅ View tracking
+- ✅ PWA Install
 
 ---
 
 ## Database Collections
-- `users` - User accounts
-- `user_sessions` - Auth sessions
-- `ads` - All advertisements
-- `payments` - Payment records
-- `banners` - Homepage banners
-- `reviews` - Seller reviews
-- `reports` - Ad reports
-- `judete` - Romanian counties
-- `localitati` - Romanian localities
-- `blog_posts` - Blog articles
-- `forum_threads` - Forum discussions
-- `escrow_transactions` - Escrow payments
-- `premium_subscriptions` - Premium plans
-- `loyalty_points` - User loyalty
-- `referrals` - Referral codes
+| Collection | Purpose |
+|------------|---------|
+| `users` | User accounts |
+| `user_sessions` | Auth sessions |
+| `ads` | Advertisements |
+| `payments` | Payment records |
+| `banners` | Homepage banners |
+| `reviews` | Seller reviews |
+| `reports` | Ad reports |
+| `judete` | Romanian counties |
+| `localitati` | Romanian localities |
+| `blog_posts` | Blog articles |
+| `forum_threads` | Forum discussions |
+| `escrow_transactions` | Escrow payments |
+| `premium_subscriptions` | Premium plans |
+| `loyalty_points` | User loyalty |
+| `referrals` | Referral codes |
+| `identity_verifications` | ID verification requests |
+
+---
+
+## Environment Variables
+
+### Backend (.env)
+```
+MONGO_URL=mongodb+srv://...
+DB_NAME=x67digital
+VIVA_CLIENT_ID=...
+VIVA_CLIENT_SECRET=...
+VIVA_SOURCE_CODE=9750
+VIVA_ENVIRONMENT=production
+RESEND_API_KEY=...
+SENDER_EMAIL=...
+EMERGENT_LLM_KEY=...
+CLOUDINARY_URL=...
+TWILIO_ACCOUNT_SID=...
+TWILIO_AUTH_TOKEN=...
+TWILIO_WHATSAPP_FROM=...
+```
+
+### Frontend (.env)
+```
+REACT_APP_BACKEND_URL=https://ultimadata-production.up.railway.app
+```
+
+---
+
+*Last updated: Feb 28, 2026*
