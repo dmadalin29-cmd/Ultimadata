@@ -294,7 +294,7 @@ export default function Header() {
                     data-testid="settings-menu-item"
                   >
                     <Settings className="w-4 h-4 mr-2" />
-                    Setări & Notificări
+                    {t('settings')}
                   </DropdownMenuItem>
                   {permission !== 'granted' && (
                     <DropdownMenuItem 
