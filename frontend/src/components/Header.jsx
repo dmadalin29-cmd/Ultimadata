@@ -379,7 +379,7 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Map className="w-5 h-5" />
-                <span>Hartă</span>
+                <span>{t('map')}</span>
               </Link>
               
               {/* Language Selector Mobile */}
