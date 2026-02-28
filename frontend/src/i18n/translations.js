@@ -106,6 +106,13 @@ export const translations = {
     areYouSure: "Ești sigur?",
     yes: "Da",
     no: "Nu",
+    priceAlerts: "Alerte de Preț",
+    sellerStats: "Statistici Vânzător",
+    loyaltyPoints: "Puncte Loialitate",
+    referralProgram: "Program Referral",
+    enableNotifications: "Activează notificările",
+    installApp: "Instalează aplicația",
+    adminPanel: "Panou Admin",
     
     // Homepage
     heroTitle: "Găsește ce cauți",
@@ -261,6 +268,13 @@ export const translations = {
     areYouSure: "Are you sure?",
     yes: "Yes",
     no: "No",
+    priceAlerts: "Price Alerts",
+    sellerStats: "Seller Stats",
+    loyaltyPoints: "Loyalty Points",
+    referralProgram: "Referral Program",
+    enableNotifications: "Enable notifications",
+    installApp: "Install app",
+    adminPanel: "Admin Panel",
     
     // Homepage
     heroTitle: "Find what you need",
