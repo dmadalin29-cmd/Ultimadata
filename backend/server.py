@@ -704,6 +704,364 @@ async def get_viva_access_token() -> str:
             raise HTTPException(status_code=502, detail="Payment service unavailable")
         return response.json()["access_token"]
 
+# ===================== AUTH ENDPOINTS =====================
+
+@api_router.post("/auth/register")
+async def register(data: UserCreate):
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    user_doc = {
+        "user_id": user_id,
+        "email": data.email,
+        "password_hash": hash_password(data.password),
+        "name": data.name,
+        "phone": data.phone,
+        "picture": None,
+        "role": "user",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_doc)
+    
+    # Create session
+    session_token = generate_token()
+    session_doc = {
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.user_sessions.insert_one(session_doc)
+    
+    # Send welcome email (non-blocking)
+    asyncio.create_task(send_email_notification(
+        data.email,
+        "welcome",
+        {"name": data.name, "site_url": "https://x67digital.com"}
+    ))
+    
+    # Send notification to admin about new registration
+    asyncio.create_task(send_email_notification(
+        "contact@x67digital.com",
+        "admin_new_registration",
+        {
+            "user_name": data.name,
+            "user_email": data.email,
+            "user_phone": data.phone or "-",
+            "registered_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M"),
+            "site_url": "https://x67digital.com"
+        }
+    ))
+    
+    response = JSONResponse(content={
+        "user_id": user_id,
+        "email": data.email,
+        "name": data.name,
+        "role": "user"
+    })
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7*24*60*60,
+        path="/"
+    )
+    return response
+
+@api_router.post("/auth/login")
+async def login(data: UserLogin):
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user or user.get("password_hash") != hash_password(data.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Create session
+    session_token = generate_token()
+    session_doc = {
+        "user_id": user["user_id"],
+        "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.user_sessions.insert_one(session_doc)
+    
+    response = JSONResponse(content={
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "name": user["name"],
+        "role": user.get("role", "user")
+    })
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7*24*60*60,
+        path="/"
+    )
+    return response
+
+@api_router.post("/auth/google-session")
+async def google_session(request: Request):
+    """Process Google OAuth session from Emergent Auth"""
+    body = await request.json()
+    session_id = body.get("session_id")
+    
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+    
+    # Get user data from Emergent Auth
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            headers={"X-Session-ID": session_id}
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        
+        auth_data = response.json()
+    
+    email = auth_data.get("email")
+    name = auth_data.get("name")
+    picture = auth_data.get("picture")
+    emergent_session_token = auth_data.get("session_token")
+    
+    # Find or create user
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    is_new_user = False
+    if not user:
+        is_new_user = True
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        user_doc = {
+            "user_id": user_id,
+            "email": email,
+            "password_hash": None,
+            "name": name,
+            "phone": None,
+            "picture": picture,
+            "role": "user",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(user_doc)
+        user = user_doc
+    else:
+        user_id = user["user_id"]
+        # Update picture if changed
+        if picture and picture != user.get("picture"):
+            await db.users.update_one({"user_id": user_id}, {"$set": {"picture": picture}})
+    
+    # Create session
+    session_token = emergent_session_token or generate_token()
+    session_doc = {
+        "user_id": user["user_id"],
+        "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.user_sessions.insert_one(session_doc)
+    
+    # Send welcome email for new users
+    if is_new_user and email:
+        asyncio.create_task(send_email_notification(
+            email,
+            "welcome",
+            {"name": name or "User", "site_url": "https://x67digital.com"}
+        ))
+        # Send notification to admin about new registration
+        asyncio.create_task(send_email_notification(
+            "contact@x67digital.com",
+            "admin_new_registration",
+            {
+                "user_name": name or "User",
+                "user_email": email,
+                "user_phone": "-",
+                "registered_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M"),
+                "site_url": "https://x67digital.com"
+            }
+        ))
+    
+    response = JSONResponse(content={
+        "user_id": user["user_id"],
+        "email": email,
+        "name": name or user.get("name"),
+        "picture": picture or user.get("picture"),
+        "role": user.get("role", "user")
+    })
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7*24*60*60,
+        path="/"
+    )
+    return response
+
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    return {"status": "healthy", "service": "x67-digital-api"}
+
+@api_router.get("/auth/me")
+async def get_me(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return {
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "name": user["name"],
+        "phone": user.get("phone"),
+        "picture": user.get("picture"),
+        "role": user.get("role", "user"),
+        "notification_settings": user.get("notification_settings", {
+            "email_messages": True,
+            "email_offers": True,
+            "whatsapp_messages": True,
+            "whatsapp_offers": True
+        })
+    }
+
+@api_router.put("/auth/profile")
+async def update_profile(request: Request):
+    """Update user profile including phone and notification settings"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    update_fields = {}
+    
+    if "name" in body:
+        update_fields["name"] = body["name"]
+    if "phone" in body:
+        update_fields["phone"] = body["phone"]
+    if "notification_settings" in body:
+        update_fields["notification_settings"] = body["notification_settings"]
+    
+    if update_fields:
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$set": update_fields}
+        )
+    
+    return {"message": "Profil actualizat cu succes"}
+
+@api_router.get("/auth/token")
+async def get_auth_token(request: Request):
+    """Get JWT token for WebSocket authentication"""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    from jose import jwt
+    SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-change-in-production")
+    ALGORITHM = "HS256"
+    
+    # Create a short-lived token for WebSocket
+    token_data = {
+        "user_id": user["user_id"],
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {"token": token}
+
+@api_router.post("/auth/logout")
+async def logout(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token:
+        await db.user_sessions.delete_one({"session_token": session_token})
+    
+    response = JSONResponse(content={"message": "Logged out"})
+    response.delete_cookie(key="session_token", path="/")
+    return response
+
+# ===================== FORGOT/RESET PASSWORD =====================
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    """Request password reset - sends email with reset link"""
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"message": "Dacă adresa de email există în baza noastră de date, vei primi un email cu instrucțiuni."}
+    
+    # Check if user registered with Google (no password)
+    if user.get("password_hash") is None:
+        return {"message": "Dacă adresa de email există în baza noastră de date, vei primi un email cu instrucțiuni."}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token
+    await db.password_resets.delete_many({"email": data.email})  # Remove old tokens
+    await db.password_resets.insert_one({
+        "email": data.email,
+        "token": reset_token,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Send reset email
+    reset_url = f"https://x67digital.com/auth?reset_token={reset_token}"
+    asyncio.create_task(send_email_notification(
+        data.email,
+        "forgot_password",
+        {
+            "user_name": user.get("name", "User"),
+            "reset_url": reset_url,
+            "site_url": "https://x67digital.com"
+        }
+    ))
+    
+    logger.info(f"Password reset requested for {data.email}")
+    return {"message": "Dacă adresa de email există în baza noastră de date, vei primi un email cu instrucțiuni."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    """Reset password using token from email"""
+    # Find valid reset token
+    reset_record = await db.password_resets.find_one({"token": data.token}, {"_id": 0})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Link-ul de resetare este invalid sau a expirat.")
+    
+    # Check expiration
+    expires_at = datetime.fromisoformat(reset_record["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if datetime.now(timezone.utc) > expires_at:
+        await db.password_resets.delete_one({"token": data.token})
+        raise HTTPException(status_code=400, detail="Link-ul de resetare a expirat. Te rugăm să soliciți unul nou.")
+    
+    # Validate password
+    if len(data.new_password) < 5:
+        raise HTTPException(status_code=400, detail="Parola trebuie să aibă cel puțin 5 caractere.")
+    
+    # Update password
+    await db.users.update_one(
+        {"email": reset_record["email"]},
+        {"$set": {"password_hash": hash_password(data.new_password)}}
+    )
+    
+    # Delete used token
+    await db.password_resets.delete_one({"token": data.token})
+    
+    # Invalidate all sessions for this user
+    user = await db.users.find_one({"email": reset_record["email"]}, {"_id": 0})
+    if user:
+        await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    
+    logger.info(f"Password reset completed for {reset_record['email']}")
+    return {"message": "Parola a fost schimbată cu succes. Te poți autentifica acum."}
+
 # ===================== CATEGORIES =====================
 
 CATEGORIES = [
@@ -1385,6 +1743,238 @@ async def get_my_ads(request: Request, page: int = 1, limit: int = 20):
         "pages": (total + limit - 1) // limit
     }
 
+# ===================== PAYMENTS =====================
+
+PAYMENT_AMOUNTS = {
+    "post_ad": 0,           # GRATUIT - publicare anunț
+    "boost": 1000,          # 10.00 RON for boost/topup (ridicare anunț escorte)
+    "top_category": 1500,   # 15.00 RON/săptămână - TOP în categorie
+    "homepage": 4000,       # 40.00 RON/săptămână - Featured pe homepage
+    "premium_monthly": 9900 # 99.00 RON/lună - Abonament Vânzător Pro
+}
+
+# Premium subscription benefits
+PREMIUM_BENEFITS = {
+    "unlimited_ads": True,
+    "priority_support": True,
+    "advanced_stats": True,
+    "no_waiting_topup": True,
+    "verified_badge": True,
+    "featured_profile": True
+}
+
+@api_router.post("/payments/create-order")
+async def create_payment_order(request: Request):
+    user = await require_auth(request)
+    body = await request.json()
+    
+    ad_id = body.get("ad_id")
+    payment_type = body.get("payment_type")  # post_ad, boost, promote
+    
+    if payment_type not in PAYMENT_AMOUNTS:
+        raise HTTPException(status_code=400, detail="Invalid payment type")
+    
+    amount = PAYMENT_AMOUNTS[payment_type]
+    
+    # Get Viva access token
+    try:
+        access_token = await get_viva_access_token()
+    except Exception as e:
+        logger.error(f"Viva token error: {e}")
+        raise HTTPException(status_code=502, detail="Payment service unavailable")
+    
+    # Create payment order
+    order_payload = {
+        "amount": amount,
+        "customerTrns": f"X67 - {payment_type} - {ad_id}",
+        "customer": {
+            "email": user["email"],
+            "fullName": user["name"],
+            "requestLang": "ro"
+        },
+        "sourceCode": VIVA_SOURCE_CODE,
+        "merchantTrns": json.dumps({"ad_id": ad_id, "payment_type": payment_type, "user_id": user["user_id"]})
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{VIVA_API_BASE}/checkout/v2/orders",
+            json=order_payload,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+        )
+        
+        if response.status_code != 200:
+            logger.error(f"Viva order error: {response.text}")
+            raise HTTPException(status_code=502, detail="Failed to create payment order")
+        
+        data = response.json()
+    
+    order_code = data.get("orderCode")
+    
+    # Store payment record
+    payment_doc = {
+        "payment_id": f"pay_{uuid.uuid4().hex[:12]}",
+        "order_code": order_code,
+        "ad_id": ad_id,
+        "user_id": user["user_id"],
+        "payment_type": payment_type,
+        "amount": amount,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.payments.insert_one(payment_doc)
+    
+    checkout_url = f"{VIVA_CHECKOUT_BASE}/web/checkout?ref={order_code}&lang=ro"
+    
+    return {
+        "order_code": order_code,
+        "checkout_url": checkout_url,
+        "amount": amount / 100
+    }
+
+@api_router.get("/payments/webhook")
+async def payment_webhook_verify(request: Request):
+    """Viva Wallet webhook URL verification"""
+    # Return the verification key obtained from Viva API
+    return {"Key": "475FFE73819D67134BBB2D6690A9023714C14E2E"}
+
+@api_router.post("/payments/webhook")
+async def payment_webhook(request: Request):
+    """Handle Viva payment webhooks and verification"""
+    body = await request.json()
+    
+    # Viva Wallet verification - they send {"Key": "xxx"} and expect the key back as JSON
+    if "Key" in body and "EventData" not in body:
+        verification_key = body.get("Key", "")
+        logger.info(f"Viva webhook POST verification request, Key: {verification_key}")
+        return {"Key": verification_key}
+    
+    event_data = body.get("EventData", {})
+    transaction_id = event_data.get("TransactionId")
+    order_code = event_data.get("OrderCode")
+    status_id = event_data.get("StatusId")
+    merchant_trns = event_data.get("MerchantTrns", "{}")
+    
+    try:
+        trns_data = json.loads(merchant_trns)
+    except json.JSONDecodeError:
+        trns_data = {}
+    
+    ad_id = trns_data.get("ad_id")
+    payment_type = trns_data.get("payment_type")
+    
+    logger.info(f"Payment webhook: order={order_code}, status={status_id}, type={payment_type}")
+    
+    if status_id == "F":  # Finished/Successful
+        # Update payment record
+        payment = await db.payments.find_one({"order_code": order_code}, {"_id": 0})
+        
+        await db.payments.update_one(
+            {"order_code": order_code},
+            {"$set": {
+                "status": "completed",
+                "transaction_id": transaction_id,
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Update ad based on payment type
+        if payment_type == "post_ad":
+            await db.ads.update_one(
+                {"ad_id": ad_id},
+                {"$set": {"is_paid": True, "status": "pending"}}  # pending for admin approval
+            )
+        elif payment_type == "boost":
+            # For escorts TopUp paid - update topup_rank to push to top
+            now = datetime.now(timezone.utc)
+            await db.ads.update_one(
+                {"ad_id": ad_id},
+                {"$set": {
+                    "is_boosted": True,
+                    "boost_expires_at": (now + timedelta(days=1)).isoformat(),
+                    "topup_rank": now.timestamp(),
+                    "last_topup": now.isoformat()
+                }}
+            )
+        elif payment_type == "top_category":
+            # TOP în categorie - 7 zile
+            now = datetime.now(timezone.utc)
+            await db.ads.update_one(
+                {"ad_id": ad_id},
+                {"$set": {
+                    "is_boosted": True,
+                    "boost_expires_at": (now + timedelta(days=7)).isoformat(),
+                    "topup_rank": now.timestamp() + 1000000,  # Higher priority
+                    "last_topup": now.isoformat(),
+                    "boost_type": "top_category"
+                }}
+            )
+        elif payment_type == "homepage":
+            # Featured pe homepage - 7 zile
+            await db.ads.update_one(
+                {"ad_id": ad_id},
+                {"$set": {
+                    "is_promoted": True,
+                    "promote_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                    "promote_type": "homepage"
+                }}
+            )
+        elif payment_type == "premium_monthly":
+            # Abonament Vânzător Pro - 30 zile
+            user_id = trns_data.get("user_id")
+            if user_id:
+                await db.users.update_one(
+                    {"user_id": user_id},
+                    {"$set": {
+                        "is_premium": True,
+                        "premium_expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                        "premium_started_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+                # Add premium badge
+                await db.users.update_one(
+                    {"user_id": user_id},
+                    {"$addToSet": {"badges": "premium_seller"}}
+                )
+        
+        # Send payment confirmation email
+        if payment and ad_id:
+            ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+            user = await db.users.find_one({"user_id": payment.get("user_id")}, {"_id": 0})
+            
+            if user and user.get("email"):
+                amount_eur = payment.get("amount", 0) / 100
+                asyncio.create_task(send_email_notification(
+                    user["email"],
+                    "payment_success",
+                    {
+                        "user_name": user.get("name", "User"),
+                        "payment_type": payment_type,
+                        "amount": f"{amount_eur:.2f}",
+                        "ad_title": ad.get("title", "Anunț") if ad else "Anunț",
+                        "ad_id": ad_id,
+                        "site_url": "https://x67digital.com"
+                    }
+                ))
+    
+    return {"status": "received"}
+
+@api_router.get("/payments/verify/{order_code}")
+async def verify_payment(order_code: int, request: Request):
+    payment = await db.payments.find_one({"order_code": order_code}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    return {
+        "order_code": order_code,
+        "status": payment.get("status"),
+        "payment_type": payment.get("payment_type"),
+        "ad_id": payment.get("ad_id")
+    }
+
 # ===================== PREMIUM SUBSCRIPTIONS =====================
 
 @api_router.get("/premium/status")
@@ -2011,6 +2601,372 @@ async def delete_banner(banner_id: str, request: Request):
     await require_admin(request)
     await db.banners.delete_one({"banner_id": banner_id})
     return {"message": "Banner deleted"}
+
+# ===================== ADMIN ENDPOINTS =====================
+
+@api_router.get("/admin/users")
+async def admin_get_users(request: Request, page: int = 1, limit: int = 20):
+    await require_admin(request)
+    
+    skip = (page - 1) * limit
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    total = await db.users.count_documents({})
+    
+    return {
+        "users": users,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.put("/admin/users/{user_id}")
+async def admin_update_user(user_id: str, request: Request):
+    await require_admin(request)
+    body = await request.json()
+    
+    update_fields = {}
+    if "role" in body:
+        update_fields["role"] = body["role"]
+    if "name" in body:
+        update_fields["name"] = body["name"]
+    if "is_blocked" in body:
+        update_fields["is_blocked"] = body["is_blocked"]
+    
+    await db.users.update_one({"user_id": user_id}, {"$set": update_fields})
+    return {"message": "User updated"}
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, request: Request):
+    admin = await require_admin(request)
+    
+    # Prevent self-deletion
+    if admin["user_id"] == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Delete user's ads
+    await db.ads.delete_many({"user_id": user_id})
+    # Delete user's sessions
+    await db.user_sessions.delete_many({"user_id": user_id})
+    # Delete user
+    await db.users.delete_one({"user_id": user_id})
+    
+    return {"message": "User and all associated data deleted"}
+
+@api_router.put("/admin/users/{user_id}/password")
+async def admin_change_user_password(user_id: str, request: Request):
+    """Admin endpoint to change a user's password"""
+    await require_admin(request)
+    body = await request.json()
+    
+    new_password = body.get("new_password")
+    if not new_password or len(new_password) < 5:
+        raise HTTPException(status_code=400, detail="Parola trebuie să aibă cel puțin 5 caractere")
+    
+    # Check if user exists
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizatorul nu a fost găsit")
+    
+    # Check if user registered with Google (no password)
+    if user.get("password_hash") is None:
+        raise HTTPException(status_code=400, detail="Acest utilizator s-a înregistrat cu Google și nu are parolă")
+    
+    # Update password
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"password_hash": hash_password(new_password)}}
+    )
+    
+    # Invalidate all sessions for this user
+    await db.user_sessions.delete_many({"user_id": user_id})
+    
+    logger.info(f"Admin changed password for user {user_id}")
+    return {"message": "Parola a fost schimbată cu succes"}
+
+@api_router.get("/users/{user_id}/public")
+async def get_public_user_info(user_id: str):
+    """Get public user information (name, picture) for chat"""
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "name": 1, "picture": 1, "user_id": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+# ===================== ADMIN ANALYTICS & EXPORT =====================
+
+@api_router.get("/admin/analytics/dashboard")
+async def admin_analytics_dashboard(request: Request):
+    """Advanced analytics dashboard for admin"""
+    await require_admin(request)
+    
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+    
+    # Basic counts
+    total_users = await db.users.count_documents({})
+    total_ads = await db.ads.count_documents({})
+    active_ads = await db.ads.count_documents({"status": "active"})
+    pending_ads = await db.ads.count_documents({"status": "pending"})
+    
+    # New users today/week/month
+    new_users_today = await db.users.count_documents({"created_at": {"$gte": today_start.isoformat()}})
+    new_users_week = await db.users.count_documents({"created_at": {"$gte": week_ago.isoformat()}})
+    new_users_month = await db.users.count_documents({"created_at": {"$gte": month_ago.isoformat()}})
+    
+    # New ads today/week/month
+    new_ads_today = await db.ads.count_documents({"created_at": {"$gte": today_start.isoformat()}})
+    new_ads_week = await db.ads.count_documents({"created_at": {"$gte": week_ago.isoformat()}})
+    new_ads_month = await db.ads.count_documents({"created_at": {"$gte": month_ago.isoformat()}})
+    
+    # Total views
+    total_views_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$views"}}}]
+    views_result = await db.ads.aggregate(total_views_pipeline).to_list(1)
+    total_views = views_result[0]["total"] if views_result else 0
+    
+    # Category distribution
+    category_pipeline = [
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$category_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    category_dist = await db.ads.aggregate(category_pipeline).to_list(20)
+    category_distribution = []
+    for item in category_dist:
+        cat = next((c for c in CATEGORIES if c["id"] == item["_id"]), None)
+        category_distribution.append({
+            "category_id": item["_id"],
+            "category_name": cat["name"] if cat else item["_id"],
+            "category_color": cat["color"] if cat else "#3B82F6",
+            "count": item["count"]
+        })
+    
+    # City distribution (top 10)
+    city_pipeline = [
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$city_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    city_dist = await db.ads.aggregate(city_pipeline).to_list(10)
+    city_distribution = []
+    for item in city_dist:
+        city = next((c for c in ROMANIAN_CITIES if c["id"] == item["_id"]), None)
+        city_distribution.append({
+            "city_id": item["_id"],
+            "city_name": city["name"] if city else item["_id"],
+            "count": item["count"]
+        })
+    
+    # Daily new ads (last 30 days)
+    daily_ads = []
+    for i in range(30):
+        day = now - timedelta(days=29-i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        count = await db.ads.count_documents({
+            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
+        })
+        daily_ads.append({
+            "date": day_start.strftime("%Y-%m-%d"),
+            "count": count
+        })
+    
+    # Daily new users (last 30 days)
+    daily_users = []
+    for i in range(30):
+        day = now - timedelta(days=29-i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        count = await db.users.count_documents({
+            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
+        })
+        daily_users.append({
+            "date": day_start.strftime("%Y-%m-%d"),
+            "count": count
+        })
+    
+    # Top ads by views
+    top_ads = await db.ads.find(
+        {"status": "active"},
+        {"_id": 0, "ad_id": 1, "title": 1, "views": 1, "category_id": 1}
+    ).sort([("views", -1)]).limit(10).to_list(10)
+    
+    # Reviews stats
+    total_reviews = await db.reviews.count_documents({})
+    avg_rating_pipeline = [{"$group": {"_id": None, "avg": {"$avg": "$rating"}}}]
+    avg_result = await db.reviews.aggregate(avg_rating_pipeline).to_list(1)
+    avg_platform_rating = round(avg_result[0]["avg"], 2) if avg_result else 0
+    
+    return {
+        "overview": {
+            "total_users": total_users,
+            "total_ads": total_ads,
+            "active_ads": active_ads,
+            "pending_ads": pending_ads,
+            "total_views": total_views,
+            "total_reviews": total_reviews,
+            "avg_platform_rating": avg_platform_rating
+        },
+        "growth": {
+            "users": {
+                "today": new_users_today,
+                "week": new_users_week,
+                "month": new_users_month
+            },
+            "ads": {
+                "today": new_ads_today,
+                "week": new_ads_week,
+                "month": new_ads_month
+            }
+        },
+        "trends": {
+            "daily_ads": daily_ads,
+            "daily_users": daily_users
+        },
+        "distribution": {
+            "categories": category_distribution,
+            "cities": city_distribution
+        },
+        "top_ads": top_ads
+    }
+
+@api_router.get("/admin/export/users")
+async def admin_export_users(request: Request):
+    """Export all users as CSV"""
+    await require_admin(request)
+    
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(None)
+    
+    # Build CSV
+    csv_lines = ["user_id,email,name,phone,role,status,created_at,avg_rating,total_reviews"]
+    for u in users:
+        line = f"{u.get('user_id','')},{u.get('email','')},{u.get('name','').replace(',',';')},{u.get('phone','')},{u.get('role','user')},{u.get('status','active')},{u.get('created_at','')},{u.get('avg_rating',0)},{u.get('total_reviews',0)}"
+        csv_lines.append(line)
+    
+    csv_content = "\n".join(csv_lines)
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=users_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+@api_router.get("/admin/export/ads")
+async def admin_export_ads(request: Request, status: Optional[str] = None):
+    """Export ads as CSV"""
+    await require_admin(request)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    ads = await db.ads.find(query, {"_id": 0}).to_list(None)
+    
+    # Build CSV
+    csv_lines = ["ad_id,user_id,title,category_id,city_id,price,status,views,created_at"]
+    for ad in ads:
+        title = ad.get('title', '').replace(',', ';').replace('\n', ' ')
+        line = f"{ad.get('ad_id','')},{ad.get('user_id','')},{title},{ad.get('category_id','')},{ad.get('city_id','')},{ad.get('price','')},{ad.get('status','')},{ad.get('views',0)},{ad.get('created_at','')}"
+        csv_lines.append(line)
+    
+    csv_content = "\n".join(csv_lines)
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=ads_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+@api_router.get("/admin/ads")
+async def admin_get_ads(request: Request, status: Optional[str] = None, page: int = 1, limit: int = 20):
+    await require_admin(request)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    skip = (page - 1) * limit
+    ads = await db.ads.find(query, {"_id": 0}).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
+    total = await db.ads.count_documents(query)
+    
+    return {
+        "ads": ads,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.put("/admin/ads/{ad_id}/status")
+async def admin_update_ad_status(ad_id: str, request: Request):
+    await require_admin(request)
+    body = await request.json()
+    
+    new_status = body.get("status")
+    if new_status not in ["pending", "active", "rejected", "expired"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    # Get ad and user info for email
+    ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+    if ad:
+        user = await db.users.find_one({"user_id": ad.get("user_id")}, {"_id": 0})
+        
+        # Send notification email based on status
+        if user and user.get("email"):
+            price_str = f"{ad.get('price')} €" if ad.get('price') else "Preț la cerere"
+            email_data = {
+                "user_name": user.get("name", "User"),
+                "ad_title": ad.get("title", "Anunț"),
+                "ad_price": price_str,
+                "ad_id": ad_id,
+                "site_url": "https://x67digital.com"
+            }
+            
+            if new_status == "active":
+                asyncio.create_task(send_email_notification(
+                    user["email"],
+                    "ad_approved",
+                    email_data
+                ))
+            elif new_status == "rejected":
+                asyncio.create_task(send_email_notification(
+                    user["email"],
+                    "ad_rejected",
+                    email_data
+                ))
+    
+    await db.ads.update_one(
+        {"ad_id": ad_id},
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": f"Ad status updated to {new_status}"}
+
+@api_router.get("/admin/stats")
+async def admin_stats(request: Request):
+    await require_admin(request)
+    
+    total_users = await db.users.count_documents({})
+    total_ads = await db.ads.count_documents({})
+    pending_ads = await db.ads.count_documents({"status": "pending"})
+    active_ads = await db.ads.count_documents({"status": "active"})
+    total_payments = await db.payments.count_documents({"status": "completed"})
+    
+    # Revenue calculation
+    pipeline = [
+        {"$match": {"status": "completed"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    revenue_result = await db.payments.aggregate(pipeline).to_list(1)
+    total_revenue = revenue_result[0]["total"] / 100 if revenue_result else 0
+    
+    return {
+        "total_users": total_users,
+        "total_ads": total_ads,
+        "pending_ads": pending_ads,
+        "active_ads": active_ads,
+        "total_payments": total_payments,
+        "total_revenue": total_revenue
+    }
 
 # ===================== FAVORITES SYSTEM =====================
 
@@ -3856,6 +4812,132 @@ async def get_ads_performance(request: Request):
     
     return {"ads": performance}
 
+# ===================== LOYALTY PROGRAM / POINTS SYSTEM =====================
+
+# Points configuration
+POINTS_CONFIG = {
+    "ad_posted": 10,
+    "ad_sold": 50,
+    "review_left": 5,
+    "review_received_5star": 20,
+    "referral_signup": 100,
+    "referral_ad_posted": 50,
+    "daily_login": 2,
+    "profile_completed": 25,
+    "identity_verified": 100,
+    "first_ad": 50
+}
+
+# Level thresholds
+LOYALTY_LEVELS = [
+    {"level": 1, "name": "Bronze", "min_points": 0, "color": "#CD7F32", "benefits": ["Badge Bronze"]},
+    {"level": 2, "name": "Silver", "min_points": 200, "color": "#C0C0C0", "benefits": ["Badge Silver", "1 TopUp gratuit/lună"]},
+    {"level": 3, "name": "Gold", "min_points": 500, "color": "#FFD700", "benefits": ["Badge Gold", "3 TopUp-uri gratuite/lună", "Prioritate în listări"]},
+    {"level": 4, "name": "Platinum", "min_points": 1000, "color": "#E5E4E2", "benefits": ["Badge Platinum", "TopUp-uri nelimitate", "Suport prioritar", "Badge exclusiv"]}
+]
+
+async def get_user_level(points: int):
+    """Get loyalty level based on points"""
+    current_level = LOYALTY_LEVELS[0]
+    for level in LOYALTY_LEVELS:
+        if points >= level["min_points"]:
+            current_level = level
+    return current_level
+
+async def add_points(user_id: str, action: str, description: str = None):
+    """Add points to a user for an action"""
+    points = POINTS_CONFIG.get(action, 0)
+    if points == 0:
+        return None
+    
+    # Create points transaction
+    transaction = {
+        "transaction_id": f"pts_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id,
+        "action": action,
+        "points": points,
+        "description": description or action.replace("_", " ").title(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.points_transactions.insert_one(transaction)
+    
+    # Update user's total points
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$inc": {"loyalty_points": points}}
+    )
+    
+    # Recalculate level
+    user = await db.users.find_one({"user_id": user_id})
+    new_total = user.get("loyalty_points", 0)
+    new_level = await get_user_level(new_total)
+    
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"loyalty_level": new_level["level"], "loyalty_level_name": new_level["name"]}}
+    )
+    
+    return {"points_earned": points, "new_total": new_total, "level": new_level}
+
+@api_router.get("/loyalty/status")
+async def get_loyalty_status(request: Request):
+    """Get current user's loyalty status"""
+    user = await require_auth(request)
+    
+    points = user.get("loyalty_points", 0)
+    current_level = await get_user_level(points)
+    
+    # Find next level
+    next_level = None
+    for level in LOYALTY_LEVELS:
+        if level["min_points"] > points:
+            next_level = level
+            break
+    
+    # Get recent transactions
+    transactions = await db.points_transactions.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort([("created_at", -1)]).limit(20).to_list(20)
+    
+    return {
+        "points": points,
+        "level": current_level,
+        "next_level": next_level,
+        "points_to_next": next_level["min_points"] - points if next_level else 0,
+        "recent_transactions": transactions,
+        "all_levels": LOYALTY_LEVELS
+    }
+
+@api_router.get("/loyalty/leaderboard")
+async def get_loyalty_leaderboard(limit: int = 20):
+    """Get top users by loyalty points"""
+    top_users = await db.users.find(
+        {"loyalty_points": {"$gt": 0}},
+        {"_id": 0, "user_id": 1, "name": 1, "picture": 1, "loyalty_points": 1, "loyalty_level_name": 1}
+    ).sort([("loyalty_points", -1)]).limit(limit).to_list(limit)
+    
+    return {"leaderboard": top_users}
+
+@api_router.post("/loyalty/claim-daily")
+async def claim_daily_points(request: Request):
+    """Claim daily login points"""
+    user = await require_auth(request)
+    
+    # Check if already claimed today
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    existing = await db.points_transactions.find_one({
+        "user_id": user["user_id"],
+        "action": "daily_login",
+        "created_at": {"$regex": f"^{today}"}
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Ai revendicat deja punctele de astăzi")
+    
+    result = await add_points(user["user_id"], "daily_login", "Login zilnic")
+    return result
+
 # ===================== REFERRAL SYSTEM =====================
 
 @api_router.get("/referral/code")
@@ -3935,6 +5017,112 @@ async def apply_referral_code(request: Request):
     await add_points(referrer["user_id"], "referral_signup", f"Utilizator nou: {user.get('name', 'Unknown')}")
     
     return {"message": "Cod de referral aplicat cu succes!"}
+
+# ===================== SELLER DASHBOARD / STATS =====================
+
+@api_router.get("/seller/dashboard")
+async def get_seller_dashboard(request: Request):
+    """Comprehensive seller dashboard with stats"""
+    user = await require_auth(request)
+    
+    # Get user's ads
+    ads = await db.ads.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).to_list(100)
+    
+    active_ads = [a for a in ads if a.get("status") == "active"]
+    
+    # Calculate totals
+    total_views = sum(a.get("views", 0) for a in ads)
+    total_favorites = sum(a.get("favorites_count", 0) for a in ads)
+    
+    # Get conversation count
+    total_conversations = await db.conversations.count_documents({
+        "participants": user["user_id"]
+    })
+    
+    # Get unread messages
+    unread_messages = await db.messages.count_documents({
+        "receiver_id": user["user_id"],
+        "is_read": False
+    })
+    
+    # Get offers stats
+    pending_offers = await db.offers.count_documents({
+        "seller_id": user["user_id"],
+        "status": "pending"
+    })
+    
+    accepted_offers = await db.offers.count_documents({
+        "seller_id": user["user_id"],
+        "status": "accepted"
+    })
+    
+    # Get review stats
+    avg_rating = user.get("avg_rating", 0)
+    total_reviews = user.get("total_reviews", 0)
+    
+    # Recent activity (last 7 days)
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    recent_views = await db.ad_views.count_documents({
+        "ad_id": {"$in": [a["ad_id"] for a in ads]},
+        "timestamp": {"$gte": week_ago}
+    }) if ads else 0
+    
+    # Top performing ads
+    top_ads = sorted(active_ads, key=lambda x: x.get("views", 0), reverse=True)[:5]
+    
+    # Get loyalty info
+    loyalty_points = user.get("loyalty_points", 0)
+    loyalty_level = await get_user_level(loyalty_points)
+    
+    return {
+        "summary": {
+            "total_ads": len(ads),
+            "active_ads": len(active_ads),
+            "total_views": total_views,
+            "total_favorites": total_favorites,
+            "total_conversations": total_conversations,
+            "unread_messages": unread_messages,
+            "pending_offers": pending_offers,
+            "accepted_offers": accepted_offers,
+            "avg_rating": avg_rating,
+            "total_reviews": total_reviews
+        },
+        "recent_activity": {
+            "views_this_week": recent_views
+        },
+        "top_ads": top_ads,
+        "loyalty": {
+            "points": loyalty_points,
+            "level": loyalty_level
+        },
+        "badges": user.get("badges", [])
+    }
+
+@api_router.get("/seller/earnings")
+async def get_seller_earnings(request: Request):
+    """Get seller's earnings from sold items (if tracked)"""
+    user = await require_auth(request)
+    
+    # Get completed transactions (accepted offers)
+    completed = await db.offers.find(
+        {"seller_id": user["user_id"], "status": "accepted"},
+        {"_id": 0, "ad_title": 1, "offered_price": 1, "counter_price": 1, "responded_at": 1}
+    ).sort([("responded_at", -1)]).limit(50).to_list(50)
+    
+    # Calculate totals
+    total_earnings = sum(
+        o.get("counter_price") or o.get("offered_price", 0) 
+        for o in completed
+    )
+    
+    return {
+        "total_sales": len(completed),
+        "total_earnings": total_earnings,
+        "recent_sales": completed[:10]
+    }
 
 # ===================== ADMIN CATEGORIES MANAGEMENT =====================
 
@@ -4477,6 +5665,160 @@ async def delete_ad_banner(banner_id: str, request: Request):
     await db.ad_banners.delete_one({"banner_id": banner_id})
     return {"message": "Ad banner deleted"}
 
+# ===================== ESCROW / SECURE PAYMENT SYSTEM =====================
+
+@api_router.post("/escrow/create")
+async def create_escrow(request: Request):
+    """Create escrow transaction for secure payment"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    ad_id = body.get("ad_id")
+    amount = body.get("amount")
+    
+    # Verify ad exists
+    ad = await db.ads.find_one({"ad_id": ad_id}, {"_id": 0})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    if ad["user_id"] == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Nu poți cumpăra propriul anunț")
+    
+    escrow_id = f"escrow_{uuid.uuid4().hex[:12]}"
+    commission = int(amount * 0.03)  # 3% commission
+    
+    escrow_doc = {
+        "escrow_id": escrow_id,
+        "ad_id": ad_id,
+        "ad_title": ad.get("title"),
+        "buyer_id": user["user_id"],
+        "buyer_name": user["name"],
+        "seller_id": ad["user_id"],
+        "amount": amount,
+        "commission": commission,
+        "total_amount": amount + commission,
+        "status": "pending",  # pending, paid, delivered, completed, disputed, refunded
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.escrow_transactions.insert_one(escrow_doc)
+    
+    # Create Viva payment
+    try:
+        access_token = await get_viva_access_token()
+        
+        order_payload = {
+            "amount": (amount + commission) * 100,  # Convert to cents
+            "customerTrns": f"X67 Escrow - {ad.get('title', '')[:30]}",
+            "customer": {
+                "email": user["email"],
+                "fullName": user["name"],
+                "requestLang": "ro"
+            },
+            "sourceCode": VIVA_SOURCE_CODE,
+            "merchantTrns": json.dumps({
+                "escrow_id": escrow_id,
+                "payment_type": "escrow"
+            })
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{VIVA_API_BASE}/checkout/v2/orders",
+                json=order_payload,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=502, detail="Payment service error")
+            
+            data = response.json()
+        
+        order_code = data.get("orderCode")
+        
+        await db.escrow_transactions.update_one(
+            {"escrow_id": escrow_id},
+            {"$set": {"order_code": order_code}}
+        )
+        
+        return {
+            "escrow_id": escrow_id,
+            "checkout_url": f"{VIVA_CHECKOUT_BASE}/web/checkout?ref={order_code}&lang=ro",
+            "amount": amount,
+            "commission": commission,
+            "total": amount + commission
+        }
+    except Exception as e:
+        logger.error(f"Escrow payment error: {str(e)}")
+        raise HTTPException(status_code=502, detail="Payment service unavailable")
+
+@api_router.get("/escrow/my-transactions")
+async def get_my_escrow_transactions(request: Request):
+    """Get user's escrow transactions (as buyer or seller)"""
+    user = await require_auth(request)
+    
+    transactions = await db.escrow_transactions.find(
+        {"$or": [{"buyer_id": user["user_id"]}, {"seller_id": user["user_id"]}]},
+        {"_id": 0}
+    ).sort([("created_at", -1)]).to_list(50)
+    
+    return {"transactions": transactions}
+
+@api_router.post("/escrow/{escrow_id}/confirm-delivery")
+async def confirm_escrow_delivery(escrow_id: str, request: Request):
+    """Buyer confirms delivery - releases funds to seller"""
+    user = await require_auth(request)
+    
+    escrow = await db.escrow_transactions.find_one({"escrow_id": escrow_id})
+    if not escrow:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if escrow["buyer_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Only buyer can confirm delivery")
+    
+    if escrow["status"] != "paid":
+        raise HTTPException(status_code=400, detail="Invalid transaction status")
+    
+    await db.escrow_transactions.update_one(
+        {"escrow_id": escrow_id},
+        {"$set": {
+            "status": "completed",
+            "completed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # TODO: Transfer funds to seller via Viva Wallet payout
+    
+    return {"message": "Plata a fost eliberată către vânzător. Mulțumim!"}
+
+@api_router.post("/escrow/{escrow_id}/dispute")
+async def dispute_escrow(escrow_id: str, request: Request):
+    """Open dispute for escrow transaction"""
+    user = await require_auth(request)
+    body = await request.json()
+    
+    escrow = await db.escrow_transactions.find_one({"escrow_id": escrow_id})
+    if not escrow:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if escrow["buyer_id"] != user["user_id"] and escrow["seller_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    await db.escrow_transactions.update_one(
+        {"escrow_id": escrow_id},
+        {"$set": {
+            "status": "disputed",
+            "dispute_reason": body.get("reason"),
+            "disputed_by": user["user_id"],
+            "disputed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Disputa a fost deschisă. Echipa noastră va analiza cazul."}
+
 # ===================== AD REPORTING SYSTEM =====================
 
 REPORT_REASONS = [
@@ -4685,6 +6027,216 @@ async def update_report(report_id: str, request: Request):
             )
     
     return {"message": "Raportul a fost actualizat"}
+
+# ===================== PUBLIC API =====================
+# API endpoints for third-party developers (no auth required, rate limited)
+
+from collections import defaultdict
+import time
+
+# Simple rate limiter
+rate_limit_store = defaultdict(list)
+RATE_LIMIT = 100  # requests per minute
+RATE_WINDOW = 60  # seconds
+
+def check_rate_limit(client_ip: str) -> bool:
+    """Check if client has exceeded rate limit"""
+    now = time.time()
+    # Clean old requests
+    rate_limit_store[client_ip] = [t for t in rate_limit_store[client_ip] if now - t < RATE_WINDOW]
+    # Check limit
+    if len(rate_limit_store[client_ip]) >= RATE_LIMIT:
+        return False
+    # Add current request
+    rate_limit_store[client_ip].append(now)
+    return True
+
+@api_router.get("/public/v1/status")
+async def public_api_status():
+    """Public API health check"""
+    return {
+        "status": "ok",
+        "version": "1.0",
+        "rate_limit": f"{RATE_LIMIT} requests per minute",
+        "endpoints": [
+            "/api/public/v1/ads",
+            "/api/public/v1/ads/{ad_id}",
+            "/api/public/v1/categories",
+            "/api/public/v1/cities",
+            "/api/public/v1/search"
+        ]
+    }
+
+@api_router.get("/public/v1/ads")
+async def public_get_ads(
+    request: Request,
+    category: Optional[str] = None,
+    city: Optional[str] = None,
+    judet: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    sort: str = "newest",
+    page: int = 1,
+    limit: int = 20
+):
+    """
+    Public API - Get ads listing
+    Rate limited: 100 requests/minute per IP
+    """
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Max 100 requests per minute.")
+    
+    if limit > 50:
+        limit = 50  # Max 50 per request
+    
+    query = {"status": "active"}
+    
+    if category:
+        query["category_id"] = category
+    if city:
+        query["city_id"] = city
+    if judet:
+        query["judet_code"] = judet
+    if min_price:
+        query["price"] = {"$gte": min_price}
+    if max_price:
+        if "price" in query:
+            query["price"]["$lte"] = max_price
+        else:
+            query["price"] = {"$lte": max_price}
+    
+    # Sort options
+    sort_field = {"newest": ("created_at", -1), "oldest": ("created_at", 1), 
+                  "price_asc": ("price", 1), "price_desc": ("price", -1)}
+    sort_key, sort_dir = sort_field.get(sort, ("created_at", -1))
+    
+    skip = (page - 1) * limit
+    total = await db.ads.count_documents(query)
+    
+    ads = await db.ads.find(query, {
+        "_id": 0,
+        "ad_id": 1,
+        "title": 1,
+        "description": 1,
+        "category_id": 1,
+        "city_id": 1,
+        "judet_code": 1,
+        "localitate": 1,
+        "price": 1,
+        "price_type": 1,
+        "images": 1,
+        "created_at": 1,
+        "views": 1
+    }).sort(sort_key, sort_dir).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "success": True,
+        "data": {
+            "ads": ads,
+            "pagination": {
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "pages": (total + limit - 1) // limit
+            }
+        }
+    }
+
+@api_router.get("/public/v1/ads/{ad_id}")
+async def public_get_ad(ad_id: str, request: Request):
+    """Public API - Get single ad details"""
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    
+    ad = await db.ads.find_one(
+        {"ad_id": ad_id, "status": "active"},
+        {"_id": 0, "user_id": 0, "contact_email": 0}
+    )
+    
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    return {"success": True, "data": ad}
+
+@api_router.get("/public/v1/categories")
+async def public_get_categories(request: Request):
+    """Public API - Get all categories"""
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    
+    return {
+        "success": True,
+        "data": CATEGORIES
+    }
+
+@api_router.get("/public/v1/cities")
+async def public_get_cities(request: Request):
+    """Public API - Get all cities"""
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    
+    return {
+        "success": True,
+        "data": ROMANIAN_CITIES
+    }
+
+@api_router.get("/public/v1/search")
+async def public_search(
+    request: Request,
+    q: str,
+    category: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20
+):
+    """Public API - Search ads"""
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    
+    if not q or len(q) < 2:
+        raise HTTPException(status_code=400, detail="Query must be at least 2 characters")
+    
+    if limit > 50:
+        limit = 50
+    
+    query = {
+        "status": "active",
+        "$or": [
+            {"title": {"$regex": q, "$options": "i"}},
+            {"description": {"$regex": q, "$options": "i"}}
+        ]
+    }
+    
+    if category:
+        query["category_id"] = category
+    
+    skip = (page - 1) * limit
+    total = await db.ads.count_documents(query)
+    
+    ads = await db.ads.find(query, {
+        "_id": 0,
+        "ad_id": 1,
+        "title": 1,
+        "category_id": 1,
+        "price": 1,
+        "images": 1,
+        "localitate": 1,
+        "created_at": 1
+    }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "success": True,
+        "data": {
+            "query": q,
+            "results": ads,
+            "total": total,
+            "page": page
+        }
+    }
 
 # ===================== STATIC FILES =====================
 
