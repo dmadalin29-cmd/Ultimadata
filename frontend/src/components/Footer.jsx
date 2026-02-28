@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export default function Footer() {
+  const { t } = useLanguage();
+  
   const categories = [
-    { id: "escorts", name: "Escorte" },
-    { id: "real_estate", name: "Imobiliare" },
-    { id: "cars", name: "Auto" },
-    { id: "jobs", name: "Locuri de muncă" },
-    { id: "electronics", name: "Electronice" },
-    { id: "services", name: "Servicii" },
+    { id: "escorts", name: t('categories.escorts') },
+    { id: "real_estate", name: t('categories.real_estate') },
+    { id: "cars", name: t('categories.cars') },
+    { id: "jobs", name: t('categories.jobs') },
+    { id: "electronics", name: t('categories.electronics') },
+    { id: "services", name: t('categories.services') },
   ];
 
   return (
