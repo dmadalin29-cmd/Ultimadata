@@ -410,7 +410,7 @@ export default function SellerProfilePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={() => handlePageChange(p => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="border-white/10 text-white hover:bg-white/5"
                   >
@@ -424,7 +424,7 @@ export default function SellerProfilePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => handlePageChange(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     className="border-white/10 text-white hover:bg-white/5"
                   >
