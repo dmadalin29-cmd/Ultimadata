@@ -30,7 +30,7 @@ export default function Footer() {
               </div>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Cea mai modernă platformă de anunțuri din România. Găsește tot ce ai nevoie, de la imobiliare la auto și servicii.
+              {t('footerDescription')}
             </p>
             <div className="flex items-center gap-3">
               <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-600/20 transition-colors">
@@ -64,7 +64,7 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h3 className="text-white font-semibold mb-6">Link-uri Utile</h3>
+            <h3 className="text-white font-semibold mb-6">{t('usefulLinks')}</h3>
             <ul className="space-y-3">
               <li>
                 <Link to="/create-ad" className="text-slate-400 hover:text-white transition-colors text-sm">
@@ -88,17 +88,17 @@ export default function Footer() {
               </li>
               <li>
                 <Link to="/blog" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Blog & Ghiduri
+                  {t('blog')} & {t('guides')}
                 </Link>
               </li>
               <li>
                 <Link to="/stories" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Povești de Succes
+                  {t('stories')}
                 </Link>
               </li>
               <li>
                 <Link to="/forum" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Forum Comunitate
+                  {t('communityForum')}
                 </Link>
               </li>
             </ul>
@@ -127,10 +127,10 @@ export default function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} X67 Digital Media Groupe. Toate drepturile rezervate.
+            © {new Date().getFullYear()} X67 Digital Media Groupe. {t('allRightsReserved')}
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-slate-500 text-sm">Plăți securizate prin</span>
+            <span className="text-slate-500 text-sm">{t('securePayments')}</span>
             <span className="text-blue-500 font-medium">Viva Wallet</span>
           </div>
         </div>
