@@ -416,7 +416,7 @@ async def admin_get_reports(request: Request, status: Optional[str] = None, page
     await require_admin(request)
     
     query = {}
-    if status:
+    if status and status != "all":
         query["status"] = status
     
     skip = (page - 1) * limit
@@ -434,11 +434,20 @@ async def admin_get_reports(request: Request, status: Optional[str] = None, page
             "reporter": reporter
         })
     
+    # Get stats for all statuses
+    stats = {
+        "pending": await db.reports.count_documents({"status": "pending"}),
+        "reviewed": await db.reports.count_documents({"status": "reviewed"}),
+        "dismissed": await db.reports.count_documents({"status": "dismissed"}),
+        "action_taken": await db.reports.count_documents({"status": "action_taken"})
+    }
+    
     return {
         "reports": enriched_reports,
         "total": total,
         "page": page,
-        "pages": (total + limit - 1) // limit
+        "pages": (total + limit - 1) // limit,
+        "stats": stats
     }
 
 @router.put("/reports/{report_id}")
