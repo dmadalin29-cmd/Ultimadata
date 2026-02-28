@@ -243,7 +243,7 @@ export default function Header() {
                     className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
-                    Mesaje {totalUnread > 0 && `(${totalUnread})`}
+                    {t('messages')} {totalUnread > 0 && `(${totalUnread})`}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate("/price-alerts")}
