@@ -149,7 +149,7 @@ export default function Header() {
             <Link 
               to="/map" 
               className="flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-purple-400 transition-colors"
-              title="Hartă"
+              title={t('map')}
               data-testid="map-link"
             >
               <Map className="w-5 h-5" />
