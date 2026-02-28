@@ -332,7 +332,7 @@ export default function Header() {
                   className="h-11 px-5 rounded-full hover:bg-white/5 text-slate-300"
                   data-testid="login-btn"
                 >
-                  Autentificare
+                  {t('login')}
                 </Button>
               </Link>
             )}
