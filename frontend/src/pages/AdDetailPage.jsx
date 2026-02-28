@@ -868,7 +868,11 @@ export default function AdDetailPage() {
               )}
 
               {/* Report */}
-              <button className="flex items-center gap-2 mt-6 text-slate-500 hover:text-red-400 text-sm transition-colors">
+              <button 
+                onClick={handleOpenReport}
+                className="flex items-center gap-2 mt-6 text-slate-500 hover:text-red-400 text-sm transition-colors"
+                data-testid="report-ad-btn"
+              >
                 <Flag className="w-4 h-4" />
                 Raportează anunțul
               </button>
@@ -878,6 +882,69 @@ export default function AdDetailPage() {
       </main>
 
       <Footer />
+      
+      {/* Report Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="bg-[#0A0A0A] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="w-5 h-5 text-red-400" />
+              Raportează Anunțul
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Selectează motivul pentru care dorești să raportezi acest anunț
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              {reportReasons.map((reason) => (
+                <button
+                  key={reason.id}
+                  onClick={() => setSelectedReason(reason.id)}
+                  className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${
+                    selectedReason === reason.id 
+                      ? 'border-red-500/50 bg-red-500/10 text-white' 
+                      : 'border-white/10 bg-[#121212] text-slate-400 hover:border-white/20'
+                  }`}
+                >
+                  {reason.name}
+                </button>
+              ))}
+            </div>
+            
+            <div>
+              <label className="text-sm text-slate-400 mb-2 block">
+                Detalii suplimentare (opțional)
+              </label>
+              <Textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="Descrie problema în detaliu..."
+                className="bg-[#121212] border-white/10 text-white resize-none"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowReportDialog(false)}
+              className="border-white/10"
+            >
+              Anulează
+            </Button>
+            <Button
+              onClick={handleSubmitReport}
+              disabled={!selectedReason || submittingReport}
+              className="bg-red-600 hover:bg-red-500"
+            >
+              {submittingReport ? "Se trimite..." : "Trimite Raportul"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Offer Dialog */}
       <Dialog open={showOfferDialog} onOpenChange={setShowOfferDialog}>
