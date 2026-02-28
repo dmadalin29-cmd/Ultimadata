@@ -1837,19 +1837,23 @@ async def create_payment_order(request: Request):
 
 @api_router.get("/payments/webhook")
 async def payment_webhook_verify(request: Request):
-    """Viva Wallet webhook URL verification - fetches Key from Viva API"""
+    """Viva Wallet webhook URL verification"""
+    # Check if Viva sent a Key in query params
+    key_from_query = request.query_params.get("Key", "")
+    if key_from_query:
+        logger.info(f"Viva webhook GET verification with Key from query: {key_from_query}")
+        return {"Key": key_from_query}
+    
+    # Try to get verification key from Viva API
     try:
-        # Get verification key from Viva API
         import base64
         import httpx
         
-        # Use Merchant ID (client_id without .apps.vivapayments.com) and API Key
         merchant_id = VIVA_CLIENT_ID.replace('.apps.vivapayments.com', '')
         api_key = VIVA_CLIENT_SECRET
-        
         credentials = base64.b64encode(f"{merchant_id}:{api_key}".encode()).decode()
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(
                 f"{VIVA_API_BASE}/api/messages/config/token",
                 headers={"Authorization": f"Basic {credentials}"}
@@ -1857,15 +1861,16 @@ async def payment_webhook_verify(request: Request):
             
             if response.status_code == 200:
                 data = response.json()
-                logger.info(f"Viva webhook verification - Key obtained successfully")
-                return {"Key": data.get("Key", "")}
+                key_value = data.get("Key", "")
+                logger.info(f"Viva webhook verification - Key from API: {key_value}")
+                return {"Key": key_value}
             else:
-                logger.error(f"Viva API error: {response.status_code} - {response.text}")
-                # Fallback - return a static key
-                return {"Key": "webhook-verification"}
+                logger.error(f"Viva API error: {response.status_code}")
     except Exception as e:
         logger.error(f"Viva webhook verification error: {str(e)}")
-        return {"Key": "webhook-verification"}
+    
+    # Last resort fallback
+    return {"Key": "verification-success"}
 
 @api_router.post("/payments/webhook")
 async def payment_webhook(request: Request):
