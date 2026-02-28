@@ -46,6 +46,15 @@ import CookieConsent from "./components/CookieConsent";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Configure axios to always send auth token from localStorage (for cross-domain auth)
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
