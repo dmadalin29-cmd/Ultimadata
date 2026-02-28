@@ -1837,11 +1837,35 @@ async def create_payment_order(request: Request):
 
 @api_router.get("/payments/webhook")
 async def payment_webhook_verify(request: Request):
-    """Viva Wallet webhook URL verification - responds to GET requests with JSON Key"""
-    # Viva sends a verification key as query param or expects us to return one
-    # Return a JSON object with Key parameter
-    verification_key = "B3248222FDCD1885AEAFE51CCC1B5607F00903F6"
-    return {"Key": verification_key}
+    """Viva Wallet webhook URL verification - fetches Key from Viva API"""
+    try:
+        # Get verification key from Viva API
+        import base64
+        import httpx
+        
+        # Use Merchant ID (client_id without .apps.vivapayments.com) and API Key
+        merchant_id = VIVA_CLIENT_ID.replace('.apps.vivapayments.com', '')
+        api_key = VIVA_CLIENT_SECRET
+        
+        credentials = base64.b64encode(f"{merchant_id}:{api_key}".encode()).decode()
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{VIVA_API_BASE}/api/messages/config/token",
+                headers={"Authorization": f"Basic {credentials}"}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"Viva webhook verification - Key obtained successfully")
+                return {"Key": data.get("Key", "")}
+            else:
+                logger.error(f"Viva API error: {response.status_code} - {response.text}")
+                # Fallback - return a static key
+                return {"Key": "webhook-verification"}
+    except Exception as e:
+        logger.error(f"Viva webhook verification error: {str(e)}")
+        return {"Key": "webhook-verification"}
 
 @api_router.post("/payments/webhook")
 async def payment_webhook(request: Request):
@@ -1851,7 +1875,7 @@ async def payment_webhook(request: Request):
     # Viva Wallet verification - they send {"Key": "xxx"} and expect the key back as JSON
     if "Key" in body and "EventData" not in body:
         verification_key = body.get("Key", "")
-        logger.info(f"Viva webhook verification request, Key: {verification_key}")
+        logger.info(f"Viva webhook POST verification request, Key: {verification_key}")
         return {"Key": verification_key}
     
     event_data = body.get("EventData", {})
