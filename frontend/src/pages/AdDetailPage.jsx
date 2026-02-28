@@ -171,6 +171,49 @@ export default function AdDetailPage() {
     }
   };
 
+  const fetchReportReasons = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/report/reasons`);
+      setReportReasons(response.data.reasons);
+    } catch (error) {
+      console.error("Error fetching report reasons:", error);
+    }
+  };
+
+  const handleOpenReport = () => {
+    if (reportReasons.length === 0) {
+      fetchReportReasons();
+    }
+    setShowReportDialog(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!selectedReason) {
+      toast.error("Selectează un motiv pentru raportare");
+      return;
+    }
+    
+    setSubmittingReport(true);
+    try {
+      await axios.post(
+        `${API_URL}/api/ads/${adId}/report`,
+        { 
+          reason: selectedReason, 
+          description: reportDescription 
+        },
+        { withCredentials: true }
+      );
+      toast.success("Mulțumim! Raportul tău a fost trimis și va fi analizat.");
+      setShowReportDialog(false);
+      setSelectedReason("");
+      setReportDescription("");
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Eroare la trimiterea raportului");
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
   const handleTopup = async () => {
     if (!user) {
       navigate("/auth");
