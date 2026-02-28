@@ -48,7 +48,9 @@ import {
   Eye as EyeIcon,
   MessageSquare,
   Trophy,
-  Pin
+  Pin,
+  Flag,
+  AlertTriangle
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
