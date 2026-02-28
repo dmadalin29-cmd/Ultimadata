@@ -186,7 +186,7 @@ export default function Header() {
                 data-testid="post-ad-btn"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Adaugă Anunț
+                {t('createAd')}
               </Button>
             </Link>
 
