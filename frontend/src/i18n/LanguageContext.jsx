@@ -38,8 +38,10 @@ export function LanguageProvider({ children }) {
   };
 
   const changeLanguage = (lang) => {
-    if (translations[lang]) {
-      setLanguage(lang);
+    if (translations[lang] && lang !== language) {
+      localStorage.setItem('x67_language', lang);
+      // Reload page to apply translations everywhere
+      window.location.reload();
     }
   };
 
