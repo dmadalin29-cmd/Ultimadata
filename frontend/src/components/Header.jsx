@@ -236,7 +236,7 @@ export default function Header() {
                     className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
                   >
                     <Heart className="w-4 h-4 mr-2" />
-                    Favorite
+                    {t('favorites')}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate("/messages")}
