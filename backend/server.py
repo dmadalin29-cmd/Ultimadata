@@ -1835,6 +1835,11 @@ async def create_payment_order(request: Request):
         "amount": amount / 100
     }
 
+@api_router.get("/payments/webhook")
+async def payment_webhook_verify():
+    """Viva Wallet webhook URL verification - responds to GET requests"""
+    return Response(content="OK", status_code=200)
+
 @api_router.post("/payments/webhook")
 async def payment_webhook(request: Request):
     """Handle Viva payment webhooks"""
