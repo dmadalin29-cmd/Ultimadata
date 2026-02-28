@@ -1637,6 +1637,7 @@ export default function AdminPage() {
     { path: "/admin", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/admin/users", icon: Users, label: "Utilizatori" },
     { path: "/admin/ads", icon: FileText, label: "Anunțuri" },
+    { path: "/admin/reports", icon: Flag, label: "Rapoarte" },
     { path: "/admin/banners", icon: Image, label: "Bannere" },
     { path: "/admin/forum", icon: MessageSquare, label: "Forum" },
     { path: "/admin/stories", icon: Trophy, label: "Povești" },
