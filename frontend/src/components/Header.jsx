@@ -321,7 +321,7 @@ export default function Header() {
                     data-testid="logout-menu-item"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Deconectare
+                    {t('logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
