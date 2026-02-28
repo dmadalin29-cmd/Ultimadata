@@ -26,6 +26,56 @@ Build a classified ads marketplace website (x67digital.com) with:
 - Email notifications for user actions
 - Responsive dark-themed UI
 
+## Latest Updates (Feb 28, 2026)
+
+### SESSION 5 - INTERACTIVE MAP FEATURE (Latest):
+
+**🗺️ Hartă Interactivă - IMPLEMENTAT COMPLET:**
+
+1. ✅ **Backend - Endpoint-uri Locație:**
+   - `GET /api/judete` - Lista județelor din România (42 județe)
+   - `GET /api/localitati` - Localități filtrate pe cod județ
+   - `GET /api/localitati/autocomplete` - Căutare autocomplete cu info județ
+   - `GET /api/ads?has_location=true&judet_code=X` - Filtrare anunțuri pe locație
+
+2. ✅ **Frontend - Pagina Hartă** (`/map`):
+   - Hartă interactivă cu Leaflet.js + OpenStreetMap
+   - Marker-e colorate pe categorii (verde=Imobiliare, albastru=Auto, etc.)
+   - Popup la click cu imagine, titlu, preț, locație
+   - Panel lateral cu detalii complete și buton "Vezi anunțul"
+   - Filtre: Categorie, Județ, Căutare text
+   - Legendă cu culorile categoriilor
+   - Centare automată pe România, zoom la selectare județ
+
+3. ✅ **Frontend - Formular Creare Anunț** (actualizat):
+   - Căutare autocomplete localitate cu rezultate instant
+   - Dropdown-uri cascadate: Județ → Localitate
+   - Selecție din autocomplete populează automat dropdown-urile
+   - Box verde de confirmare cu locația selectată
+   - Coordonate GPS salvate automat (lat, lng)
+
+4. ✅ **Header Actualizat:**
+   - Iconiță hartă (Map) vizibilă în header
+   - Navigare directă la `/map`
+
+**Database Collections (MongoDB):**
+- `judete`: 42 intrări (code, name, lat, lng)
+- `localitati`: 368+ intrări (judet_code, name, type, lat, lng, search_name)
+
+**New/Modified Files:**
+- `/app/frontend/src/pages/MapPage.jsx` - Pagina hartă nouă
+- `/app/frontend/src/pages/CreateAdPage.jsx` - Locație actualizată
+- `/app/frontend/src/components/Header.jsx` - Link hartă
+- `/app/backend/server.py` - Endpoint-uri locație
+
+**Dependencies Added:**
+- `leaflet@1.9.4`
+- `react-leaflet@5.0.0`
+
+**Testing:** 100% pass rate (23/23 backend tests, all frontend verified)
+
+---
+
 ## Latest Updates (Feb 27, 2026)
 
 ### SESSION 4 - MAJOR FEATURE EXPANSION (Latest):
