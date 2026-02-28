@@ -7,12 +7,14 @@ import BannerCarousel from "../components/BannerCarousel";
 import CategoryGrid from "../components/CategoryGrid";
 import AdCard from "../components/AdCard";
 import SEOHead from "../components/SEOHead";
+import { useLanguage } from "../i18n/LanguageContext";
 import { Button } from "../components/ui/button";
 import { ArrowRight, TrendingUp, Clock, Sparkles } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function HomePage() {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [promotedAds, setPromotedAds] = useState([]);
   const [recentAds, setRecentAds] = useState([]);
@@ -67,10 +69,10 @@ export default function HomePage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                  Explorează Categoriile
+                  {t('popularCategories')}
                 </h2>
                 <p className="text-slate-400">
-                  Găsește exact ce cauți în categoriile noastre
+                  {t('findWhatYouNeed')}
                 </p>
               </div>
             </div>
@@ -103,10 +105,10 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                      Anunțuri Promovate
+                      {t('featuredAds')}
                     </h2>
                     <p className="text-slate-400 text-xs sm:text-sm">
-                      Cele mai populare oferte
+                      {t('popularOffers')}
                     </p>
                   </div>
                 </div>
@@ -166,10 +168,10 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="text-center py-16 rounded-2xl bg-[#0A0A0A] border border-white/5">
-                <p className="text-slate-400 mb-4">Nu există anunțuri încă</p>
+                <p className="text-slate-400 mb-4">{t('noAds')}</p>
                 <Link to="/create-ad">
                   <Button className="bg-blue-600 hover:bg-blue-500 text-white">
-                    Adaugă primul anunț
+                    {t('addFirstAd')}
                   </Button>
                 </Link>
               </div>
@@ -186,15 +188,15 @@ export default function HomePage() {
               
               <div className="relative z-10">
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  Ai ceva de vândut?
+                  {t('haveToSell')}
                 </h2>
                 <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-                  Postează anunțul tău în câteva minute și ajunge la mii de cumpărători potențiali.
+                  {t('postInMinutes')}
                 </p>
                 <Link to="/create-ad">
                   <Button className="h-14 px-8 text-lg rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all duration-300 hover:shadow-[0_0_40px_rgba(59,130,246,0.6)]">
                     <TrendingUp className="w-5 h-5 mr-2" />
-                    Publică Gratuit
+                    {t('publishFree')}
                   </Button>
                 </Link>
               </div>
