@@ -47,7 +47,7 @@ export default function Footer() {
 
           {/* Categories */}
           <div>
-            <h3 className="text-white font-semibold mb-6">Categorii</h3>
+            <h3 className="text-white font-semibold mb-6">{t('popularCategories')}</h3>
             <ul className="space-y-3">
               {categories.map((cat) => (
                 <li key={cat.id}>
@@ -68,22 +68,22 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link to="/create-ad" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Adaugă Anunț
+                  {t('createAd')}
                 </Link>
               </li>
               <li>
                 <Link to="/termeni-si-conditii" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Termeni și Condiții
+                  {t('termsConditions')}
                 </Link>
               </li>
               <li>
                 <Link to="/politica-confidentialitate" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Politica de Confidențialitate
+                  {t('privacyPolicy')}
                 </Link>
               </li>
               <li>
                 <Link to="/intrebari-frecvente" className="text-slate-400 hover:text-white transition-colors text-sm">
-                  Întrebări Frecvente
+                  {t('faq')}
                 </Link>
               </li>
               <li>
