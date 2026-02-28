@@ -44,6 +44,7 @@ export default function Header() {
   const navigate = useNavigate();
   const { permission, canInstallPWA, installPWA, requestPermission, unreadCount } = useNotifications();
   const { theme, toggleTheme, isDark } = useTheme();
+  const { language, setLanguage, languages, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadMessages, setUnreadMessages] = useState(0);
