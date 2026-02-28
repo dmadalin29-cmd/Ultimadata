@@ -283,3 +283,32 @@ input, select, textarea {
     font-size: 16px !important;
 }
 
+
+/* Neon Glow Effects for Blog */
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+  }
+  to {
+    box-shadow: 0 0 40px rgba(52, 211, 153, 0.6);
+  }
+}
+
+/* Custom scrollbar hide */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Gradient radial for background effects */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-from), var(--tw-gradient-to));
+}
