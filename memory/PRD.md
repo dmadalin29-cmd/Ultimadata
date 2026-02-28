@@ -28,7 +28,7 @@ Build a classified ads marketplace website (x67digital.com) with:
 
 ## Latest Updates (Feb 28, 2026)
 
-### SESSION 5 - INTERACTIVE MAP FEATURE (Latest):
+### SESSION 5 - INTERACTIVE MAP FEATURE + AD REPORTING SYSTEM:
 
 **🗺️ Hartă Interactivă - IMPLEMENTAT COMPLET:**
 
@@ -45,34 +45,40 @@ Build a classified ads marketplace website (x67digital.com) with:
    - Panel lateral cu detalii complete și buton "Vezi anunțul"
    - Filtre: Categorie, Județ, Căutare text
    - Legendă cu culorile categoriilor
-   - Centare automată pe România, zoom la selectare județ
 
 3. ✅ **Frontend - Formular Creare Anunț** (actualizat):
    - Căutare autocomplete localitate cu rezultate instant
    - Dropdown-uri cascadate: Județ → Localitate
-   - Selecție din autocomplete populează automat dropdown-urile
-   - Box verde de confirmare cu locația selectată
    - Coordonate GPS salvate automat (lat, lng)
 
-4. ✅ **Header Actualizat:**
-   - Iconiță hartă (Map) vizibilă în header
-   - Navigare directă la `/map`
+**🚨 Sistem Raportare Anunțuri - IMPLEMENTAT COMPLET:**
+
+1. ✅ **Backend - Endpoint-uri Raportare:**
+   - `GET /api/report/reasons` - 8 motive de raportare
+   - `POST /api/ads/{ad_id}/report` - Creează raport cu motiv și descriere
+   - `GET /api/admin/reports` - Lista rapoarte pentru admin cu statistici
+   - `PUT /api/admin/reports/{report_id}` - Actualizează status și ia acțiune
+
+2. ✅ **Frontend - Dialog Raportare** (AdDetailPage):
+   - Buton "Raportează anunțul" pe fiecare anunț
+   - Dialog cu 8 motive: Spam, Conținut inadecvat, Tentativă de înșelăciune, Anunț duplicat, Categorie greșită, Activitate ilegală, Date personale expuse, Altul
+   - Câmp opțional pentru descriere detaliată
+   - Toast de confirmare la trimitere
+
+3. ✅ **Admin Panel - Gestionare Rapoarte** (`/admin/reports`):
+   - Statistici: În Așteptare, Verificate, Acțiune Luată, Respinse
+   - Filtrare pe status
+   - Butoane acțiuni: Respinge, Avertizează, Suspendă, Șterge Anunț
+   - Notificare email automată pentru vânzător
+
+**Auto-suspendare**: Anunțurile cu 5+ rapoarte sunt suspendate automat.
 
 **Database Collections (MongoDB):**
-- `judete`: 42 intrări (code, name, lat, lng)
-- `localitati`: 368+ intrări (judet_code, name, type, lat, lng, search_name)
+- `judete`: 42 intrări
+- `localitati`: 368+ intrări
+- `reports`: Rapoarte utilizatori (report_id, ad_id, reason, status, etc.)
 
-**New/Modified Files:**
-- `/app/frontend/src/pages/MapPage.jsx` - Pagina hartă nouă
-- `/app/frontend/src/pages/CreateAdPage.jsx` - Locație actualizată
-- `/app/frontend/src/components/Header.jsx` - Link hartă
-- `/app/backend/server.py` - Endpoint-uri locație
-
-**Dependencies Added:**
-- `leaflet@1.9.4`
-- `react-leaflet@5.0.0`
-
-**Testing:** 100% pass rate (23/23 backend tests, all frontend verified)
+**Testing:** 100% pass rate - All backend and frontend tests passed
 
 ---
 
