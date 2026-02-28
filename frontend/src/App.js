@@ -90,6 +90,10 @@ const AuthProvider = ({ children }) => {
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         withCredentials: true
       });
+      // Save token to localStorage if returned (for cross-domain sync)
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+      }
       setUser(response.data);
     } catch (error) {
       // If auth fails, clear token
