@@ -229,7 +229,7 @@ export default function Header() {
                     data-testid="profile-menu-item"
                   >
                     <User className="w-4 h-4 mr-2" />
-                    Profilul Meu
+                    {t('profile')}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate("/favorites")}
@@ -250,7 +250,7 @@ export default function Header() {
                     className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
                   >
                     <BellRing className="w-4 h-4 mr-2" />
-                    Alerte de Preț
+                    {t('priceAlerts')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem 
@@ -259,7 +259,7 @@ export default function Header() {
                     data-testid="seller-dashboard-menu-item"
                   >
                     <TrendingUp className="w-4 h-4 mr-2" />
-                    Statistici Vânzător
+                    {t('sellerStats')}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate("/loyalty")}
@@ -267,7 +267,7 @@ export default function Header() {
                     data-testid="loyalty-menu-item"
                   >
                     <Award className="w-4 h-4 mr-2" />
-                    Puncte Loialitate
+                    {t('loyaltyPoints')}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate("/referral")}
@@ -275,7 +275,7 @@ export default function Header() {
                     data-testid="referral-menu-item"
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    Program Referral
+                    {t('referralProgram')}
                   </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem 
@@ -302,7 +302,7 @@ export default function Header() {
                       className="cursor-pointer text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                     >
                       <Bell className="w-4 h-4 mr-2" />
-                      Activează notificările
+                      {t('enableNotifications')}
                     </DropdownMenuItem>
                   )}
                   {canInstallPWA && (
@@ -311,7 +311,7 @@ export default function Header() {
                       className="cursor-pointer text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
                     >
                       <Download className="w-4 h-4 mr-2" />
-                      Instalează aplicația
+                      {t('installApp')}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator className="bg-white/10" />
@@ -364,7 +364,7 @@ export default function Header() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Caută anunțuri..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full h-12 pl-12 pr-4 bg-[#121212] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50"
                   data-testid="mobile-search-input"
                 />
