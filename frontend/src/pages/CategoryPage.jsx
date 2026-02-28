@@ -371,7 +371,7 @@ export default function CategoryPage() {
                       variant="outline"
                       size="icon"
                       disabled={page === 1}
-                      onClick={() => setPage(p => p - 1)}
+                      onClick={() => handlePageChange(p => p - 1)}
                       className="border-white/10 text-white hover:bg-white/5"
                       data-testid="prev-page-btn"
                     >
@@ -386,7 +386,7 @@ export default function CategoryPage() {
                             key={pageNum}
                             variant={page === pageNum ? "default" : "outline"}
                             size="icon"
-                            onClick={() => setPage(pageNum)}
+                            onClick={() => handlePageChange(pageNum)}
                             className={page === pageNum 
                               ? "bg-blue-600 text-white" 
                               : "border-white/10 text-white hover:bg-white/5"
@@ -402,7 +402,7 @@ export default function CategoryPage() {
                       variant="outline"
                       size="icon"
                       disabled={page === totalPages}
-                      onClick={() => setPage(p => p + 1)}
+                      onClick={() => handlePageChange(p => p + 1)}
                       className="border-white/10 text-white hover:bg-white/5"
                       data-testid="next-page-btn"
                     >
