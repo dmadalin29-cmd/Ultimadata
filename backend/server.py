@@ -6243,12 +6243,14 @@ async def public_search(
 from fastapi.staticfiles import StaticFiles
 
 # Import route modules
-from routes import loyalty_router, referral_router, escrow_router, public_api_router, seller_router
+from routes import loyalty_router, referral_router, escrow_router, public_api_router, seller_router, auth_router, payments_router
 from routes.loyalty import init_db as init_loyalty_db, init_auth as init_loyalty_auth
 from routes.referral import init_db as init_referral_db, init_auth as init_referral_auth, init_add_points
 from routes.escrow import init_dependencies as init_escrow_deps
 from routes.public_api import init_dependencies as init_public_api_deps
 from routes.seller import init_dependencies as init_seller_deps
+from routes.auth import init_dependencies as init_auth_deps
+from routes.payments import init_dependencies as init_payments_deps
 
 # Initialize route module dependencies
 init_loyalty_db(db)
@@ -6259,6 +6261,8 @@ init_add_points(add_points)
 init_escrow_deps(db, require_auth, get_viva_access_token, VIVA_API_BASE, VIVA_SOURCE_CODE, VIVA_CHECKOUT_BASE, logger)
 init_public_api_deps(db, CATEGORIES, ROMANIAN_CITIES)
 init_seller_deps(db, require_auth, get_user_level)
+init_auth_deps(db, logger, hash_password, generate_token, get_current_user, require_auth, send_email_notification)
+init_payments_deps(db, logger, require_auth, get_viva_access_token, send_email_notification, VIVA_API_BASE, VIVA_SOURCE_CODE, VIVA_CHECKOUT_BASE)
 
 # Include modular routers
 app.include_router(loyalty_router, prefix="/api")
@@ -6266,6 +6270,8 @@ app.include_router(referral_router, prefix="/api")
 app.include_router(escrow_router, prefix="/api")
 app.include_router(public_api_router, prefix="/api")
 app.include_router(seller_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(payments_router, prefix="/api")
 
 # Include main router
 app.include_router(api_router)
