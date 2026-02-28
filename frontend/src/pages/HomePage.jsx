@@ -133,10 +133,10 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                    Anunțuri Recente
+                    {t('recentAds')}
                   </h2>
                   <p className="text-slate-400 text-xs sm:text-sm">
-                    Cele mai noi anunțuri
+                    {t('newestAds')}
                   </p>
                 </div>
               </div>
@@ -145,7 +145,7 @@ export default function HomePage() {
                   variant="ghost" 
                   className="text-slate-400 hover:text-white hover:bg-white/5 text-sm sm:text-base"
                 >
-                  <span className="hidden sm:inline">Vezi toate</span>
+                  <span className="hidden sm:inline">{t('viewAll')}</span>
                   <ArrowRight className="w-4 h-4 sm:ml-2" />
                 </Button>
               </Link>
