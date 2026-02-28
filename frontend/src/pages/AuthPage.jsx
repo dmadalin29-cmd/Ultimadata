@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../App";
+import { useLanguage } from "../i18n/LanguageContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ export default function AuthPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const { t } = useLanguage();
   
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -63,10 +65,10 @@ export default function AuthPage() {
       );
 
       login(response.data);
-      toast.success(isLogin ? "Autentificare reușită!" : "Cont creat cu succes!");
+      toast.success(isLogin ? t('auth.loginSuccess') : t('auth.registerSuccess'));
       navigate(from, { replace: true });
     } catch (error) {
-      const message = error.response?.data?.detail || "A apărut o eroare";
+      const message = error.response?.data?.detail || t('error');
       toast.error(message);
     } finally {
       setLoading(false);
@@ -97,12 +99,12 @@ export default function AuthPage() {
     e.preventDefault();
     
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("Parolele nu coincid");
+      toast.error(t('auth.passwordsNotMatch'));
       return;
     }
     
     if (formData.newPassword.length < 5) {
-      toast.error("Parola trebuie să aibă cel puțin 5 caractere");
+      toast.error(t('auth.passwordMinLength'));
       return;
     }
     
@@ -152,12 +154,12 @@ export default function AuthPage() {
           {/* Reset Password Form */}
           {isResetPassword ? (
             <>
-              <h1 className="text-3xl font-bold text-white mb-2">Resetează parola</h1>
-              <p className="text-slate-400 mb-8">Introdu noua ta parolă</p>
+              <h1 className="text-3xl font-bold text-white mb-2">{t('auth.resetPassword')}</h1>
+              <p className="text-slate-400 mb-8">{t('auth.enterNewPassword')}</p>
               
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="text-sm text-slate-400 mb-2 block">Parolă nouă</label>
+                  <label className="text-sm text-slate-400 mb-2 block">{t('auth.newPassword')}</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
@@ -181,7 +183,7 @@ export default function AuthPage() {
                 </div>
                 
                 <div>
-                  <label className="text-sm text-slate-400 mb-2 block">Confirmă parola</label>
+                  <label className="text-sm text-slate-400 mb-2 block">{t('confirmPassword')}</label>
                   <div className="relative">
                     <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
@@ -207,7 +209,7 @@ export default function AuthPage() {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      Resetează parola
+                      {t('auth.resetPassword')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
@@ -223,18 +225,18 @@ export default function AuthPage() {
                 className="flex items-center gap-2 text-slate-400 hover:text-white mt-6"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Înapoi la autentificare
+                {t('auth.backToLogin')}
               </button>
             </>
           ) : isForgotPassword ? (
             /* Forgot Password Form */
             <>
-              <h1 className="text-3xl font-bold text-white mb-2">Ai uitat parola?</h1>
-              <p className="text-slate-400 mb-8">Introdu adresa de email pentru a primi un link de resetare</p>
+              <h1 className="text-3xl font-bold text-white mb-2">{t('forgotPassword')}?</h1>
+              <p className="text-slate-400 mb-8">{t('auth.enterEmailReset')}</p>
               
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
-                  <label className="text-sm text-slate-400 mb-2 block">Email</label>
+                  <label className="text-sm text-slate-400 mb-2 block">{t('email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <Input
@@ -259,7 +261,7 @@ export default function AuthPage() {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      Trimite link de resetare
+                      {t('auth.sendResetLink')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
@@ -271,7 +273,7 @@ export default function AuthPage() {
                 className="flex items-center gap-2 text-slate-400 hover:text-white mt-6"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Înapoi la autentificare
+                {t('auth.backToLogin')}
               </button>
             </>
           ) : (
@@ -279,12 +281,12 @@ export default function AuthPage() {
             <>
               {/* Title */}
               <h1 className="text-3xl font-bold text-white mb-2">
-                {isLogin ? "Bine ai revenit!" : "Creează un cont"}
+                {isLogin ? t('auth.welcomeBack') : t('auth.createAccount')}
               </h1>
               <p className="text-slate-400 mb-8">
                 {isLogin 
-                  ? "Intră în cont pentru a continua" 
-                  : "Înregistrează-te pentru a posta anunțuri"
+                  ? t('auth.loginToContinue') 
+                  : t('auth.registerToPost')
                 }
               </p>
 
@@ -313,7 +315,7 @@ export default function AuthPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continuă cu Google
+            {t('auth.continueWithGoogle')}
           </Button>
 
           {/* Divider */}
@@ -322,7 +324,7 @@ export default function AuthPage() {
               <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[#050505] text-slate-500">sau</span>
+              <span className="px-4 bg-[#050505] text-slate-500">{t('orContinueWith')}</span>
             </div>
           </div>
 
@@ -330,14 +332,14 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label className="text-sm text-slate-400 mb-2 block">Nume</label>
+                <label className="text-sm text-slate-400 mb-2 block">{t('name')}</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <Input
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Numele tău"
+                    placeholder={t('auth.yourName')}
                     className="h-12 pl-12 bg-[#121212] border-white/10 text-white placeholder:text-slate-600"
                     required={!isLogin}
                     data-testid="name-input"
@@ -347,7 +349,7 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="text-sm text-slate-400 mb-2 block">Email</label>
+              <label className="text-sm text-slate-400 mb-2 block">{t('email')}</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <Input
@@ -364,7 +366,7 @@ export default function AuthPage() {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm text-slate-400">Parolă</label>
+                <label className="text-sm text-slate-400">{t('password')}</label>
                 {isLogin && (
                   <button
                     type="button"
@@ -372,7 +374,7 @@ export default function AuthPage() {
                     className="text-sm text-blue-500 hover:text-blue-400"
                     data-testid="forgot-password-link"
                   >
-                    Ai uitat parola?
+                    {t('forgotPassword')}?
                   </button>
                 )}
               </div>
@@ -408,7 +410,7 @@ export default function AuthPage() {
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  {isLogin ? "Autentificare" : "Creează cont"}
+                  {isLogin ? t('loginButton') : t('registerButton')}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
@@ -417,13 +419,13 @@ export default function AuthPage() {
 
           {/* Toggle */}
           <p className="text-center text-slate-400 mt-6">
-            {isLogin ? "Nu ai cont?" : "Ai deja cont?"}{" "}
+            {isLogin ? t('noAccount') : t('haveAccount')}{" "}
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-500 hover:text-blue-400 font-medium"
               data-testid="toggle-auth-btn"
             >
-              {isLogin ? "Înregistrează-te" : "Autentifică-te"}
+              {isLogin ? t('register') : t('login')}
             </button>
           </p>
             </>
@@ -441,10 +443,10 @@ export default function AuthPage() {
         />
         <div className="absolute bottom-0 left-0 right-0 p-12 z-20">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Cea mai modernă platformă de anunțuri
+            {t('auth.heroTitle')}
           </h2>
           <p className="text-slate-300 text-lg">
-            Vinde rapid, cumpără sigur. Alătură-te comunității X67.
+            {t('auth.heroSubtitle')}
           </p>
         </div>
       </div>
