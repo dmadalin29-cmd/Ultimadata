@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { MapPin, Eye, Clock, Zap, Star, ShieldCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { ro } from "date-fns/locale";
+import { ro, enUS } from "date-fns/locale";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export default function AdCard({ ad }) {
+  const { t, language } = useLanguage();
   const {
     ad_id,
     title,
@@ -26,13 +28,14 @@ export default function AdCard({ ad }) {
   const isTopSeller = user_badges?.includes("top_seller");
 
   const formatPrice = () => {
-    if (price_type === "free") return "Gratuit";
-    if (price_type === "negotiable") return price ? `${price.toLocaleString("ro-RO")} € (neg.)` : "Negociabil";
-    return price ? `${price.toLocaleString("ro-RO")} €` : "Preț la cerere";
+    if (price_type === "free") return t('free');
+    if (price_type === "negotiable") return price ? `${price.toLocaleString("ro-RO")} € (${t('negotiable')})` : t('priceNegotiable');
+    return price ? `${price.toLocaleString("ro-RO")} €` : t('priceOnRequest');
   };
 
+  const dateLocale = language === 'en' ? enUS : ro;
   const timeAgo = created_at 
-    ? formatDistanceToNow(new Date(created_at), { addSuffix: true, locale: ro })
+    ? formatDistanceToNow(new Date(created_at), { addSuffix: true, locale: dateLocale })
     : "";
 
   const defaultImage = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop";
@@ -68,21 +71,21 @@ export default function AdCard({ ad }) {
         {/* Badges */}
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-wrap gap-1 sm:gap-2">
           {isVerified && (
-            <span className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-green-600 text-white text-[10px] sm:text-xs font-medium shadow-lg" title="Vânzător verificat">
+            <span className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-green-600 text-white text-[10px] sm:text-xs font-medium shadow-lg" title={t('verifiedSeller')}>
               <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">Verificat</span>
+              <span className="hidden sm:inline">{t('verified')}</span>
             </span>
           )}
           {is_promoted && (
             <span className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-600 text-white text-[10px] sm:text-xs font-medium shadow-lg">
               <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">Promovat</span>
+              <span className="hidden sm:inline">{t('promoted')}</span>
             </span>
           )}
           {is_boosted && (
             <span className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-fuchsia-600 text-white text-[10px] sm:text-xs font-medium shadow-lg">
               <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">Ridicat</span>
+              <span className="hidden sm:inline">{t('boosted')}</span>
             </span>
           )}
         </div>
