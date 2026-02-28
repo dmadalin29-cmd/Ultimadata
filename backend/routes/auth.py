@@ -255,6 +255,14 @@ async def get_me(request: Request):
     user = await get_current_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Get session token from request to return it (for cross-domain localStorage sync)
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            session_token = auth_header.split(" ")[1]
+    
     return {
         "user_id": user["user_id"],
         "email": user["email"],
@@ -262,6 +270,7 @@ async def get_me(request: Request):
         "phone": user.get("phone"),
         "picture": user.get("picture"),
         "role": user.get("role", "user"),
+        "token": session_token,  # Return token for localStorage sync
         "notification_settings": user.get("notification_settings", {
             "email_messages": True,
             "email_offers": True,
