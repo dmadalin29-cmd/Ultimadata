@@ -84,6 +84,12 @@ export const translations = {
     postedAt: "Publicat la",
     priceNegotiable: "Preț negociabil",
     priceOnRequest: "Preț la cerere",
+    free: "Gratuit",
+    negotiable: "neg.",
+    verified: "Verificat",
+    verifiedSeller: "Vânzător verificat",
+    promoted: "Promovat",
+    boosted: "Ridicat",
     
     // Categories
     categories: {
@@ -280,6 +286,12 @@ export const translations = {
     postedAt: "Posted",
     priceNegotiable: "Negotiable",
     priceOnRequest: "Price on request",
+    free: "Free",
+    negotiable: "neg.",
+    verified: "Verified",
+    verifiedSeller: "Verified seller",
+    promoted: "Promoted",
+    boosted: "Boosted",
     
     // Categories
     categories: {
