@@ -99,6 +99,20 @@ export default function CategoryPage() {
 
   const currentCategory = categories.find(c => c.id === categoryId);
 
+  // Helper function to change page and scroll to top
+  const handlePageChange = (newPage) => {
+    if (typeof newPage === 'function') {
+      setPage(prev => {
+        const nextPage = newPage(prev);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return nextPage;
+      });
+    } else {
+      setPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
     fetchInitialData();
   }, []);
