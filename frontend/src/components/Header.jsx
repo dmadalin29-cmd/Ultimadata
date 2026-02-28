@@ -145,21 +145,21 @@ export default function Header() {
               </>
             )}
 
-            {/* Map Link - visible for all users */}
+            {/* Map Link - visible for all users on all devices */}
             <Link 
               to="/map" 
-              className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-purple-400 transition-colors"
+              className="flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-purple-400 transition-colors"
               title="Hartă"
               data-testid="map-link"
             >
               <Map className="w-5 h-5" />
             </Link>
 
-            {/* Language Selector */}
+            {/* Language Selector - visible on all devices */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button 
-                  className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  className="flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
                   data-testid="language-selector"
                 >
                   <Globe className="w-5 h-5" />
