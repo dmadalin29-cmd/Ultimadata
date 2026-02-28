@@ -1,5 +1,5 @@
 // X67 Digital Media Groupe - Service Worker
-const CACHE_NAME = 'x67-cache-v1';
+const CACHE_NAME = 'x67-cache-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
