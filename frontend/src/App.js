@@ -92,6 +92,8 @@ const AuthProvider = ({ children }) => {
       });
       setUser(response.data);
     } catch (error) {
+      // If auth fails, clear token
+      localStorage.removeItem('auth_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -99,6 +101,10 @@ const AuthProvider = ({ children }) => {
   };
 
   const login = (userData) => {
+    // Save token to localStorage for cross-domain auth
+    if (userData.token) {
+      localStorage.setItem('auth_token', userData.token);
+    }
     setUser(userData);
   };
 
@@ -108,6 +114,8 @@ const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     }
+    // Clear token from localStorage
+    localStorage.removeItem('auth_token');
     setUser(null);
   };
 
