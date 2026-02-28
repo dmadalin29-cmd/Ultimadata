@@ -235,9 +235,23 @@ function DashboardOverview() {
 
   return (
     <div data-testid="admin-dashboard">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Dashboard Avansat</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Dashboard Avansat</h1>
+          <p className="text-slate-400 text-sm">Statistici și analize în timp real</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {/* Time Range Selector */}
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-32 bg-[#121212] border-white/10 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#121212] border-white/10">
+              <SelectItem value="7">7 zile</SelectItem>
+              <SelectItem value="30">30 zile</SelectItem>
+              <SelectItem value="90">90 zile</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             variant="outline"
             size="sm"
@@ -245,16 +259,7 @@ function DashboardOverview() {
             className="border-white/10 text-white hover:bg-white/5"
           >
             <Download className="w-4 h-4 mr-2" />
-            Export Utilizatori
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('ads')}
-            className="border-white/10 text-white hover:bg-white/5"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export Anunțuri
+            Export
           </Button>
         </div>
       </div>
@@ -264,14 +269,14 @@ function DashboardOverview() {
         {statCards.map((stat, i) => (
           <div
             key={i}
-            className={`${stat.bg} rounded-xl p-5 border border-white/5`}
+            className={`${stat.bg} rounded-xl p-5 border border-white/5 hover:border-white/10 transition-all`}
           >
             <div className="flex items-center justify-between mb-3">
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
               {stat.change > 0 && (
-                <span className="text-xs text-emerald-400 flex items-center gap-1">
+                <span className="text-xs text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                   <TrendingUp className="w-3 h-3" />
-                  +{stat.change} săpt.
+                  +{stat.change}
                 </span>
               )}
             </div>
@@ -282,40 +287,105 @@ function DashboardOverview() {
         ))}
       </div>
 
-      {/* Trends Charts */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
-        {/* Daily Ads Chart */}
-        <div className="bg-[#0A0A0A] rounded-xl p-6 border border-white/5">
+      {/* Main Charts Row */}
+      <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        {/* Combined Area Chart - Takes 2 columns */}
+        <div className="lg:col-span-2 bg-[#0A0A0A] rounded-xl p-6 border border-white/5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Anunțuri Noi (30 zile)</h3>
-            <span className="text-sm text-emerald-400">
-              +{growth.ads?.month || 0} luna aceasta
-            </span>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Evoluție Platformă</h3>
+              <p className="text-sm text-slate-500">Anunțuri și utilizatori noi</p>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                <span className="text-slate-400">Anunțuri</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span className="text-slate-400">Utilizatori</span>
+              </span>
+            </div>
           </div>
-          <MiniChart data={trends.daily_ads} color="#10B981" height={120} />
-          <div className="flex justify-between mt-2 text-xs text-slate-500">
-            <span>Acum 30 zile</span>
-            <span>Azi</span>
-          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={combinedData}>
+              <defs>
+                <linearGradient id="colorAds" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" />
+              <XAxis dataKey="date" stroke="#6B7280" fontSize={12} tickLine={false} />
+              <YAxis stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey="anunțuri" stroke="#10B981" fill="url(#colorAds)" strokeWidth={2} />
+              <Area type="monotone" dataKey="utilizatori" stroke="#3B82F6" fill="url(#colorUsers)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Daily Users Chart */}
+        {/* Pie Chart - Categories */}
         <div className="bg-[#0A0A0A] rounded-xl p-6 border border-white/5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Utilizatori Noi (30 zile)</h3>
-            <span className="text-sm text-blue-400">
-              +{growth.users?.month || 0} luna aceasta
-            </span>
+          <div className="flex items-center gap-2 mb-4">
+            <PieChart className="w-5 h-5 text-purple-400" />
+            <h3 className="text-lg font-semibold text-white">Categorii</h3>
           </div>
-          <MiniChart data={trends.daily_users} color="#3B82F6" height={120} />
-          <div className="flex justify-between mt-2 text-xs text-slate-500">
-            <span>Acum 30 zile</span>
-            <span>Azi</span>
+          <ResponsiveContainer width="100%" height={200}>
+            <RechartsPie>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </RechartsPie>
+          </ResponsiveContainer>
+          <div className="mt-2 space-y-1">
+            {pieData.slice(0, 4).map((cat, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color || CHART_COLORS[i] }}></span>
+                  <span className="text-slate-400 truncate">{cat.name}</span>
+                </span>
+                <span className="text-white font-medium">{cat.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Distribution */}
+      {/* Hourly Activity Heatmap */}
+      <div className="bg-[#0A0A0A] rounded-xl p-6 border border-white/5 mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="w-5 h-5 text-orange-400" />
+          <h3 className="text-lg font-semibold text-white">Activitate pe Ore</h3>
+          <span className="text-sm text-slate-500 ml-2">Vizualizări pe oră</span>
+        </div>
+        <ResponsiveContainer width="100%" height={150}>
+          <BarChart data={hourlyData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" vertical={false} />
+            <XAxis dataKey="hour" stroke="#6B7280" fontSize={10} tickLine={false} interval={2} />
+            <YAxis stroke="#6B7280" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="views" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Distribution Row */}
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
         {/* Categories Distribution */}
         <div className="bg-[#0A0A0A] rounded-xl p-6 border border-white/5">
@@ -328,14 +398,14 @@ function DashboardOverview() {
                 <div key={i} className="flex items-center gap-3">
                   <div 
                     className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: cat.category_color }}
+                    style={{ backgroundColor: cat.category_color || CHART_COLORS[i % CHART_COLORS.length] }}
                   />
                   <span className="text-sm text-slate-300 flex-1">{cat.category_name}</span>
                   <span className="text-sm text-slate-500">{cat.count}</span>
                   <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
                     <div 
                       className="h-full rounded-full transition-all"
-                      style={{ width: `${percentage}%`, backgroundColor: cat.category_color }}
+                      style={{ width: `${percentage}%`, backgroundColor: cat.category_color || CHART_COLORS[i % CHART_COLORS.length] }}
                     />
                   </div>
                 </div>
