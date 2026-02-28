@@ -221,6 +221,10 @@ class BannerCreate(BaseModel):
 
 # ===================== HELPER FUNCTIONS =====================
 
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "x67-digital-api"}
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
