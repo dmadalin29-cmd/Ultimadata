@@ -243,19 +243,26 @@ class TestPublicAPIModule:
         response = requests.get(f"{BASE_URL}/api/public/v1/ads")
         assert response.status_code == 200
         data = response.json()
-        assert "ads" in data
-        assert "total" in data
-        assert isinstance(data["ads"], list)
-        print(f"✓ Public API ads: {data['total']} total ads")
+        # Response is wrapped in {success: true, data: {...}}
+        assert data.get("success") == True
+        assert "data" in data
+        ads_data = data["data"]
+        assert "ads" in ads_data
+        assert isinstance(ads_data["ads"], list)
+        print(f"✓ Public API ads: {ads_data['pagination']['total']} total ads")
     
     def test_public_categories(self):
         """Test /api/public/v1/categories returns categories"""
         response = requests.get(f"{BASE_URL}/api/public/v1/categories")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
-        assert len(data) > 0
-        print(f"✓ Public API categories: {len(data)} categories")
+        # Response is wrapped in {success: true, data: [...]}
+        assert data.get("success") == True
+        assert "data" in data
+        categories = data["data"]
+        assert isinstance(categories, list)
+        assert len(categories) > 0
+        print(f"✓ Public API categories: {len(categories)} categories")
 
 
 class TestLoyaltyModule:
