@@ -332,18 +332,20 @@ function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <ScrollToTop />
-            <div className="min-h-screen bg-[#050505]">
-              <AppRouter />
-              <Toaster position="top-right" richColors />
-              <PWAPrompt />
-              <ChatbotWidget />
-              <CookieConsent />
-            </div>
-          </NotificationProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <ScrollToTop />
+              <div className="min-h-screen bg-[#050505]">
+                <AppRouter />
+                <Toaster position="top-right" richColors />
+                <PWAPrompt />
+                <ChatbotWidget />
+                <CookieConsent />
+              </div>
+            </NotificationProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </BrowserRouter>
   );
