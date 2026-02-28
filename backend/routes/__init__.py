@@ -9,6 +9,7 @@ from .public_api import router as public_api_router
 from .seller import router as seller_router
 from .auth import router as auth_router
 from .payments import router as payments_router
+from .admin import router as admin_router
 
 __all__ = [
     'loyalty_router',
@@ -17,5 +18,6 @@ __all__ = [
     'public_api_router',
     'seller_router',
     'auth_router',
-    'payments_router'
+    'payments_router',
+    'admin_router'
 ]
