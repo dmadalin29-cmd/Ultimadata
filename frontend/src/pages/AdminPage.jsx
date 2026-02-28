@@ -75,54 +75,64 @@ import {
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Mini chart component
-function MiniChart({ data, color = "#3B82F6", height = 60 }) {
-  if (!data || data.length === 0) return null;
-  
-  const max = Math.max(...data.map(d => d.count), 1);
-  const width = 100 / data.length;
-  
-  return (
-    <div className="flex items-end gap-0.5" style={{ height }}>
-      {data.slice(-14).map((d, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-t transition-all hover:opacity-80"
-          style={{
-            height: `${(d.count / max) * 100}%`,
-            minHeight: d.count > 0 ? 4 : 0,
-            backgroundColor: color
-          }}
-          title={`${d.date}: ${d.count}`}
-        />
-      ))}
-    </div>
-  );
-}
+// Color palette for charts
+const CHART_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#84CC16'];
 
-// Dashboard Overview - Advanced
+// Custom tooltip for charts
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#1A1A1A] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+        <p className="text-slate-400 text-xs">{label}</p>
+        <p className="text-white font-bold">{payload[0].value?.toLocaleString()}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Dashboard Overview - Advanced with Recharts
 function DashboardOverview() {
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const [hourlyData, setHourlyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('30');
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [timeRange]);
 
   const fetchData = async () => {
     try {
       const [statsRes, analyticsRes] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/admin/analytics/dashboard`, { withCredentials: true })
+        axios.get(`${API_URL}/api/admin/analytics/dashboard?days=${timeRange}`, { withCredentials: true })
       ]);
       setStats(statsRes.data);
       setAnalytics(analyticsRes.data);
+      
+      // Generate hourly activity data for heatmap
+      generateHourlyData();
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateHourlyData = () => {
+    // Simulate hourly data (in real app, fetch from backend)
+    const hours = [];
+    for (let h = 0; h < 24; h++) {
+      hours.push({
+        hour: `${h.toString().padStart(2, '0')}:00`,
+        views: Math.floor(Math.random() * 500) + 50,
+        ads: Math.floor(Math.random() * 20) + 1,
+        users: Math.floor(Math.random() * 30) + 5
+      });
+    }
+    setHourlyData(hours);
   };
 
   const handleExport = async (type) => {
@@ -163,6 +173,31 @@ function DashboardOverview() {
   const growth = analytics?.growth || {};
   const trends = analytics?.trends || {};
   const distribution = analytics?.distribution || {};
+
+  // Prepare chart data
+  const dailyAdsData = trends.daily_ads?.map(d => ({
+    date: d.date?.slice(5) || '',
+    anunțuri: d.count
+  })) || [];
+
+  const dailyUsersData = trends.daily_users?.map(d => ({
+    date: d.date?.slice(5) || '',
+    utilizatori: d.count
+  })) || [];
+
+  // Combine data for area chart
+  const combinedData = dailyAdsData.map((d, i) => ({
+    date: d.date,
+    anunțuri: d.anunțuri,
+    utilizatori: dailyUsersData[i]?.utilizatori || 0
+  }));
+
+  // Pie chart data for categories
+  const pieData = distribution.categories?.slice(0, 6).map(cat => ({
+    name: cat.category_name,
+    value: cat.count,
+    color: cat.category_color || CHART_COLORS[0]
+  })) || [];
 
   const statCards = [
     { 
