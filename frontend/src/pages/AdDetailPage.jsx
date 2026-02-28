@@ -131,6 +131,13 @@ export default function AdDetailPage() {
   const [offerPrice, setOfferPrice] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
+  
+  // Report states
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReasons, setReportReasons] = useState([]);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     fetchAd();
