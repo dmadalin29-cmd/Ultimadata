@@ -221,7 +221,7 @@ export default function Header() {
                     className="cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
                   >
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    Dashboard
+                    {t('dashboard')}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate("/profile")}
