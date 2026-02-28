@@ -370,6 +370,41 @@ export default function Header() {
                 />
               </div>
             </form>
+            
+            {/* Mobile Quick Links */}
+            <div className="flex items-center gap-2 mb-4">
+              <Link 
+                to="/map"
+                className="flex-1 flex items-center justify-center gap-2 h-12 bg-[#121212] border border-white/10 rounded-xl text-slate-300 hover:text-purple-400 hover:border-purple-500/30 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Map className="w-5 h-5" />
+                <span>Hartă</span>
+              </Link>
+              
+              {/* Language Selector Mobile */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center justify-center gap-2 h-12 px-4 bg-[#121212] border border-white/10 rounded-xl text-slate-300 hover:text-white hover:border-white/20 transition-colors">
+                    <Globe className="w-5 h-5" />
+                    <span>{language === 'ro' ? '🇷🇴' : '🇬🇧'}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-[#0A0A0A] border-white/10 min-w-[120px]">
+                  {languages.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => setLanguage(lang.code)}
+                      className={`cursor-pointer ${language === lang.code ? 'bg-blue-500/20 text-blue-400' : 'text-white'}`}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      {lang.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
             <Link 
               to={user ? "/create-ad" : "/auth"}
               className="block"
