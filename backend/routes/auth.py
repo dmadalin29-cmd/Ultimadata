@@ -97,11 +97,13 @@ async def register(data: UserCreate):
         }
     ))
     
+    # Return token in response body for cross-domain auth (localStorage) + cookie as fallback
     response = JSONResponse(content={
         "user_id": user_id,
         "email": data.email,
         "name": data.name,
-        "role": "user"
+        "role": "user",
+        "token": session_token  # Token for localStorage-based auth
     })
     response.set_cookie(
         key="session_token",
@@ -130,11 +132,13 @@ async def login(data: UserLogin):
     }
     await db.user_sessions.insert_one(session_doc)
     
+    # Return token in response body for cross-domain auth (localStorage) + cookie as fallback
     response = JSONResponse(content={
         "user_id": user["user_id"],
         "email": user["email"],
         "name": user["name"],
-        "role": user.get("role", "user")
+        "role": user.get("role", "user"),
+        "token": session_token  # Token for localStorage-based auth
     })
     response.set_cookie(
         key="session_token",
@@ -226,12 +230,14 @@ async def google_session(request: Request):
             }
         ))
     
+    # Return token in response body for cross-domain auth (localStorage) + cookie as fallback
     response = JSONResponse(content={
         "user_id": user["user_id"],
         "email": email,
         "name": name or user.get("name"),
         "picture": picture or user.get("picture"),
-        "role": user.get("role", "user")
+        "role": user.get("role", "user"),
+        "token": session_token  # Token for localStorage-based auth
     })
     response.set_cookie(
         key="session_token",
