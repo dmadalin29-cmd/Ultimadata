@@ -5807,6 +5807,215 @@ async def dispute_escrow(escrow_id: str, request: Request):
     
     return {"message": "Disputa a fost deschisă. Echipa noastră va analiza cazul."}
 
+# ===================== AD REPORTING SYSTEM =====================
+
+REPORT_REASONS = [
+    {"id": "spam", "name": "Spam sau conținut fals"},
+    {"id": "inappropriate", "name": "Conținut inadecvat sau ofensator"},
+    {"id": "scam", "name": "Tentativă de înșelăciune"},
+    {"id": "duplicate", "name": "Anunț duplicat"},
+    {"id": "wrong_category", "name": "Categorie greșită"},
+    {"id": "illegal", "name": "Activitate ilegală"},
+    {"id": "personal_info", "name": "Date personale expuse"},
+    {"id": "other", "name": "Altul"}
+]
+
+@api_router.get("/report/reasons")
+async def get_report_reasons():
+    """Get list of report reasons"""
+    return {"reasons": REPORT_REASONS}
+
+@api_router.post("/ads/{ad_id}/report")
+async def report_ad(ad_id: str, request: Request):
+    """Report an ad for review"""
+    body = await request.json()
+    
+    reason = body.get("reason")
+    description = body.get("description", "")
+    
+    if not reason:
+        raise HTTPException(status_code=400, detail="Motivul raportului este obligatoriu")
+    
+    # Verify ad exists
+    ad = await db.ads.find_one({"ad_id": ad_id})
+    if not ad:
+        raise HTTPException(status_code=404, detail="Anunțul nu a fost găsit")
+    
+    # Check if user is logged in (optional - can report anonymously)
+    reporter_id = None
+    try:
+        user = await require_auth(request)
+        reporter_id = user["user_id"]
+        
+        # Check if user already reported this ad
+        existing = await db.reports.find_one({
+            "ad_id": ad_id,
+            "reporter_id": reporter_id
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Ai raportat deja acest anunț")
+    except HTTPException as e:
+        if e.status_code != 401:
+            raise e
+    
+    report_id = f"rep_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc)
+    
+    report_doc = {
+        "report_id": report_id,
+        "ad_id": ad_id,
+        "ad_title": ad.get("title"),
+        "ad_owner_id": ad.get("user_id"),
+        "reporter_id": reporter_id,
+        "reason": reason,
+        "reason_label": next((r["name"] for r in REPORT_REASONS if r["id"] == reason), reason),
+        "description": description,
+        "status": "pending",  # pending, reviewed, dismissed, action_taken
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat()
+    }
+    
+    await db.reports.insert_one(report_doc)
+    
+    # Increment report count on ad
+    await db.ads.update_one(
+        {"ad_id": ad_id},
+        {"$inc": {"report_count": 1}}
+    )
+    
+    # If ad has too many reports, auto-suspend for review
+    updated_ad = await db.ads.find_one({"ad_id": ad_id})
+    if updated_ad.get("report_count", 0) >= 5 and updated_ad.get("status") == "active":
+        await db.ads.update_one(
+            {"ad_id": ad_id},
+            {"$set": {"status": "reported", "auto_suspended": True}}
+        )
+        # Send email to ad owner
+        try:
+            await send_email(
+                to=updated_ad.get("contact_email") or "",
+                subject="Anunțul tău a fost suspendat pentru verificare",
+                html=f"""
+                <h2>Anunțul tău a fost suspendat temporar</h2>
+                <p>Anunțul <strong>{updated_ad['title']}</strong> a primit mai multe raportări și a fost suspendat automat pentru verificare.</p>
+                <p>Echipa noastră va analiza cazul și vei fi notificat în cel mai scurt timp.</p>
+                """
+            )
+        except:
+            pass
+    
+    return {"message": "Mulțumim pentru raportare! Echipa noastră va verifica anunțul."}
+
+@api_router.get("/admin/reports")
+async def get_reports(
+    request: Request,
+    status: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20
+):
+    """Get reports for admin review"""
+    user = await require_auth(request)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    query = {}
+    if status and status != "all":
+        query["status"] = status
+    
+    skip = (page - 1) * limit
+    
+    reports = await db.reports.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.reports.count_documents(query)
+    
+    # Get stats
+    stats = {
+        "pending": await db.reports.count_documents({"status": "pending"}),
+        "reviewed": await db.reports.count_documents({"status": "reviewed"}),
+        "dismissed": await db.reports.count_documents({"status": "dismissed"}),
+        "action_taken": await db.reports.count_documents({"status": "action_taken"})
+    }
+    
+    return {
+        "reports": reports,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit,
+        "stats": stats
+    }
+
+@api_router.put("/admin/reports/{report_id}")
+async def update_report(report_id: str, request: Request):
+    """Update report status and take action"""
+    user = await require_auth(request)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    body = await request.json()
+    new_status = body.get("status")
+    action = body.get("action")  # none, warn, suspend, delete
+    admin_notes = body.get("admin_notes", "")
+    
+    report = await db.reports.find_one({"report_id": report_id})
+    if not report:
+        raise HTTPException(status_code=404, detail="Raportul nu a fost găsit")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Update report
+    await db.reports.update_one(
+        {"report_id": report_id},
+        {"$set": {
+            "status": new_status,
+            "action": action,
+            "admin_notes": admin_notes,
+            "reviewed_by": user["user_id"],
+            "reviewed_at": now.isoformat(),
+            "updated_at": now.isoformat()
+        }}
+    )
+    
+    # Take action on the ad
+    ad_id = report["ad_id"]
+    
+    if action == "warn":
+        # Send warning to ad owner
+        ad = await db.ads.find_one({"ad_id": ad_id})
+        if ad:
+            try:
+                await send_email(
+                    to=ad.get("contact_email") or "",
+                    subject="Avertisment - Anunțul tău a fost raportat",
+                    html=f"""
+                    <h2>Avertisment pentru anunțul: {ad['title']}</h2>
+                    <p>Anunțul tău a primit o raportare validă. Te rugăm să te asiguri că respectă regulamentul platformei.</p>
+                    <p>Motiv: {report['reason_label']}</p>
+                    """
+                )
+            except:
+                pass
+                
+    elif action == "suspend":
+        # Suspend the ad
+        await db.ads.update_one(
+            {"ad_id": ad_id},
+            {"$set": {"status": "suspended", "suspended_reason": f"Raportare: {report['reason_label']}"}}
+        )
+        
+    elif action == "delete":
+        # Delete the ad
+        await db.ads.delete_one({"ad_id": ad_id})
+    
+    # If ad was auto-suspended and action is dismiss, reactivate it
+    if action == "none" and new_status == "dismissed":
+        ad = await db.ads.find_one({"ad_id": ad_id})
+        if ad and ad.get("auto_suspended"):
+            await db.ads.update_one(
+                {"ad_id": ad_id},
+                {"$set": {"status": "active", "auto_suspended": False}}
+            )
+    
+    return {"message": "Raportul a fost actualizat"}
+
 # ===================== STATIC FILES =====================
 
 from fastapi.staticfiles import StaticFiles
