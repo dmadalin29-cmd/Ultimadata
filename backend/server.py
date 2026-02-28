@@ -6242,7 +6242,7 @@ ALLOWED_ORIGINS = [
     "https://www.x67digital.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://local-classifieds-7.preview.emergentagent.com"
+    "https://classifieds-hub-53.preview.emergentagent.com"
 ]
 
 # Cache middleware for static data

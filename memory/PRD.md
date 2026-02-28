@@ -487,7 +487,7 @@ RESEND_API_KEY=re_...
 SENDER_EMAIL=onboarding@resend.dev
 
 # Frontend (.env)
-REACT_APP_BACKEND_URL=https://local-classifieds-7.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://classifieds-hub-53.preview.emergentagent.com
 ```
 
 ## API Endpoints
