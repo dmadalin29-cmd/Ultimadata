@@ -50,8 +50,28 @@ import {
   Trophy,
   Pin,
   Flag,
-  AlertTriangle
+  AlertTriangle,
+  Activity,
+  PieChart,
+  Clock
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart as RechartsPie,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from "recharts";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
