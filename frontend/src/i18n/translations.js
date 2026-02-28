@@ -96,6 +96,12 @@ export const translations = {
     faq: "Întrebări Frecvente",
     contact: "Contact",
     aboutUs: "Despre Noi",
+    footerDescription: "Cea mai modernă platformă de anunțuri din România. Găsește tot ce ai nevoie, de la imobiliare la auto și servicii.",
+    usefulLinks: "Link-uri Utile",
+    guides: "Ghiduri",
+    communityForum: "Forum Comunitate",
+    allRightsReserved: "Toate drepturile rezervate.",
+    securePayments: "Plăți securizate prin",
     
     // Misc
     welcome: "Bine ai venit",
@@ -266,6 +272,12 @@ export const translations = {
     faq: "FAQ",
     contact: "Contact",
     aboutUs: "About Us",
+    footerDescription: "The most modern classified ads platform in Romania. Find everything you need, from real estate to cars and services.",
+    usefulLinks: "Useful Links",
+    guides: "Guides",
+    communityForum: "Community Forum",
+    allRightsReserved: "All rights reserved.",
+    securePayments: "Secure payments via",
     
     // Misc
     welcome: "Welcome",
