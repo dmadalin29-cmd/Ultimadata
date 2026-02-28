@@ -142,6 +142,16 @@ export default function Header() {
               </>
             )}
 
+            {/* Map Link - visible for all users */}
+            <Link 
+              to="/map" 
+              className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-purple-400 transition-colors"
+              title="Hartă"
+              data-testid="map-link"
+            >
+              <Map className="w-5 h-5" />
+            </Link>
+
             {/* Post Ad Button */}
             <Link to={user ? "/create-ad" : "/auth"}>
               <Button 
