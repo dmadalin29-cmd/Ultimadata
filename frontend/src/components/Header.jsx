@@ -155,6 +155,30 @@ export default function Header() {
               <Map className="w-5 h-5" />
             </Link>
 
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button 
+                  className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  data-testid="language-selector"
+                >
+                  <Globe className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-[#0A0A0A] border-white/10 min-w-[120px]">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={`cursor-pointer ${language === lang.code ? 'bg-blue-500/20 text-blue-400' : 'text-white'}`}
+                  >
+                    <span className="mr-2">{lang.flag}</span>
+                    {lang.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Post Ad Button */}
             <Link to={user ? "/create-ad" : "/auth"}>
               <Button 
