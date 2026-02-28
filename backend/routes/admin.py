@@ -297,27 +297,38 @@ async def admin_analytics_dashboard(request: Request):
             "count": item["count"]
         })
     
-    # Daily new ads (last 30 days)
+    # Daily new ads (last 30 days) - OPTIMIZED with aggregation
+    thirty_days_ago = (now - timedelta(days=30)).isoformat()
+    daily_ads_pipeline = [
+        {"$match": {"created_at": {"$gte": thirty_days_ago}}},
+        {"$project": {"date": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    daily_ads_result = await db.ads.aggregate(daily_ads_pipeline).to_list(31)
+    daily_ads_map = {item["_id"]: item["count"] for item in daily_ads_result}
+    
     daily_ads = []
     for i in range(30):
         day = now - timedelta(days=29-i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        count = await db.ads.count_documents({
-            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
-        })
-        daily_ads.append({"date": day_start.strftime("%Y-%m-%d"), "count": count})
+        date_str = day.strftime("%Y-%m-%d")
+        daily_ads.append({"date": date_str, "count": daily_ads_map.get(date_str, 0)})
     
-    # Daily new users (last 30 days)
+    # Daily new users (last 30 days) - OPTIMIZED with aggregation
+    daily_users_pipeline = [
+        {"$match": {"created_at": {"$gte": thirty_days_ago}}},
+        {"$project": {"date": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    daily_users_result = await db.users.aggregate(daily_users_pipeline).to_list(31)
+    daily_users_map = {item["_id"]: item["count"] for item in daily_users_result}
+    
     daily_users = []
     for i in range(30):
         day = now - timedelta(days=29-i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        count = await db.users.count_documents({
-            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
-        })
-        daily_users.append({"date": day_start.strftime("%Y-%m-%d"), "count": count})
+        date_str = day.strftime("%Y-%m-%d")
+        daily_users.append({"date": date_str, "count": daily_users_map.get(date_str, 0)})
     
     # Top ads by views
     top_ads = await db.ads.find(
