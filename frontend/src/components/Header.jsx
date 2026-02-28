@@ -4,6 +4,7 @@ import axios from "axios";
 import { useAuth } from "../App";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../i18n/LanguageContext";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -32,7 +33,8 @@ import {
   Award,
   Users,
   TrendingUp,
-  Map
+  Map,
+  Globe
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
