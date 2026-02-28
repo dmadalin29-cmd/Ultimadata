@@ -1842,8 +1842,14 @@ async def payment_webhook_verify():
 
 @api_router.post("/payments/webhook")
 async def payment_webhook(request: Request):
-    """Handle Viva payment webhooks"""
+    """Handle Viva payment webhooks and verification"""
     body = await request.json()
+    
+    # Viva Wallet verification - they send {"Key": "xxx"} and expect the key back
+    if "Key" in body and "EventData" not in body:
+        verification_key = body.get("Key", "")
+        logger.info(f"Viva webhook verification request, Key: {verification_key}")
+        return Response(content=verification_key, status_code=200, media_type="text/plain")
     
     event_data = body.get("EventData", {})
     transaction_id = event_data.get("TransactionId")
