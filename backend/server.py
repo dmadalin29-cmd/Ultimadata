@@ -6245,6 +6245,25 @@ ALLOWED_ORIGINS = [
     "https://local-classifieds-7.preview.emergentagent.com"
 ]
 
+# Cache middleware for static data
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
+class CacheMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        
+        # Add cache headers for public API and static data
+        path = request.url.path
+        if path.startswith("/api/public/") or path.startswith("/api/categories") or path.startswith("/api/cities") or path.startswith("/api/judete"):
+            response.headers["Cache-Control"] = "public, max-age=3600"  # 1 hour cache
+        elif path.startswith("/api/ads") and request.method == "GET":
+            response.headers["Cache-Control"] = "public, max-age=60"  # 1 minute cache for ads
+        
+        return response
+
+app.add_middleware(CacheMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
