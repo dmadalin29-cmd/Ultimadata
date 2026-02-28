@@ -6243,19 +6243,19 @@ async def public_search(
 from fastapi.staticfiles import StaticFiles
 
 # Import route modules
-from routes.loyalty import router as loyalty_router, init_db as init_loyalty_db, init_auth as init_loyalty_auth, add_points, get_user_level, POINTS_CONFIG, LOYALTY_LEVELS
-from routes.referral import router as referral_router, init_db as init_referral_db, init_auth as init_referral_auth, init_add_points
-from routes.escrow import router as escrow_router, init_dependencies as init_escrow_deps
-from routes.public_api import router as public_api_router, init_dependencies as init_public_api_deps
-from routes.seller import router as seller_router, init_dependencies as init_seller_deps
+from routes import loyalty_router, referral_router, escrow_router, public_api_router, seller_router
+from routes.loyalty import init_db as init_loyalty_db, init_auth as init_loyalty_auth
+from routes.referral import init_db as init_referral_db, init_auth as init_referral_auth, init_add_points
+from routes.escrow import init_dependencies as init_escrow_deps
+from routes.public_api import init_dependencies as init_public_api_deps
+from routes.seller import init_dependencies as init_seller_deps
 
 # Initialize route module dependencies
 init_loyalty_db(db)
 init_loyalty_auth(require_auth)
 init_referral_db(db)
 init_referral_auth(require_auth)
-init_referral_add_points = init_add_points
-init_referral_add_points(add_points)
+init_add_points(add_points)
 init_escrow_deps(db, require_auth, get_viva_access_token, VIVA_API_BASE, VIVA_SOURCE_CODE, VIVA_CHECKOUT_BASE, logger)
 init_public_api_deps(db, CATEGORIES, ROMANIAN_CITIES)
 init_seller_deps(db, require_auth, get_user_level)
