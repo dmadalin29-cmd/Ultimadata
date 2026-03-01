@@ -722,14 +722,19 @@ function UsersManagement() {
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
                 <TableRow key={user.user_id} className="border-white/5 hover:bg-white/5">
-                  <TableCell className="text-white font-medium">{user.name}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium">{user.name}</span>
+                      <span className="text-slate-500 text-xs sm:hidden">{user.email}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-slate-400 hidden sm:table-cell">{user.email}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <Select
                       value={user.role}
                       onValueChange={(value) => handleUpdateRole(user.user_id, value)}
                     >
-                      <SelectTrigger className="w-32 h-8 bg-transparent border-white/10 text-white">
+                      <SelectTrigger className="w-24 h-8 bg-transparent border-white/10 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[#121212] border-white/10">
