@@ -220,12 +220,14 @@ Extracted 9 route modules from monolithic server.py (2327 lines total):
 ## Prioritized Backlog
 
 ### P0 (Critical)
+- [x] Fix Floating "Add Ad" Button (FAB) positioning - COMPLETED (Mar 1, 2026)
 - [ ] Fix production authentication (cross-domain cookies)
 
 ### P1 (High)
-- [ ] Remove duplicate code from server.py
+- [ ] Continue refactoring server.py (still ~4900 lines)
 - [ ] Video Chat (WebRTC)
 - [ ] Browser Push Notifications
+- [ ] Generate sitemap.xml for SEO
 
 ### P2 (Medium)
 - [ ] Verify PWA iPhone layout fix
