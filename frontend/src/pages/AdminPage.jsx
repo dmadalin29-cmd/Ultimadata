@@ -1515,9 +1515,9 @@ function ForumModeration() {
                     <span className="truncate max-w-[200px]">{thread.title}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-slate-400">{thread.user_name}</TableCell>
-                <TableCell className="text-slate-400">{thread.category}</TableCell>
-                <TableCell className="text-slate-400">{thread.reply_count || 0}</TableCell>
+                <TableCell className="text-slate-400 hidden sm:table-cell">{thread.user_name}</TableCell>
+                <TableCell className="text-slate-400 hidden md:table-cell">{thread.category}</TableCell>
+                <TableCell className="text-slate-400 hidden lg:table-cell">{thread.reply_count || 0}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     thread.status === "active" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
