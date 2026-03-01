@@ -390,6 +390,7 @@ function App() {
           <AuthProvider>
             <NotificationProvider>
               <ScrollToTop />
+              <ServiceWorkerUpdater />
               <div className="min-h-screen bg-[#050505] overflow-x-hidden">
                 <AppRouter />
                 <Toaster position="top-right" richColors />
