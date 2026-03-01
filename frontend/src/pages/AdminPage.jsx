@@ -156,17 +156,84 @@ function DashboardOverview() {
   };
 
   if (loading) {
-    return <div className="animate-pulse space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-32 bg-[#121212] rounded-xl" />
-        ))}
+    return (
+      <div className="space-y-6">
+        {/* Modern Loading Header */}
+        <div className="flex items-center justify-center py-8">
+          <div className="relative">
+            {/* Outer ring */}
+            <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 animate-pulse"></div>
+            {/* Spinning ring */}
+            <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-emerald-500 animate-spin"></div>
+            {/* Inner dot */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Loading Text */}
+        <p className="text-center text-slate-400 animate-pulse">
+          Se încarcă datele dashboard-ului...
+        </p>
+        
+        {/* Skeleton Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div 
+              key={i} 
+              className="h-32 bg-gradient-to-br from-[#0A0A0A] to-[#121212] rounded-xl border border-white/5 overflow-hidden relative"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skeleton-shimmer"></div>
+              <div className="p-4 space-y-3">
+                <div className="w-10 h-10 bg-white/5 rounded-lg animate-pulse"></div>
+                <div className="w-24 h-4 bg-white/5 rounded animate-pulse"></div>
+                <div className="w-16 h-6 bg-white/10 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Skeleton Charts */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <div 
+              key={i} 
+              className="h-80 bg-gradient-to-br from-[#0A0A0A] to-[#121212] rounded-xl border border-white/5 overflow-hidden relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skeleton-shimmer"></div>
+              <div className="p-6 space-y-4">
+                <div className="w-32 h-5 bg-white/5 rounded animate-pulse"></div>
+                <div className="flex items-end justify-between h-48 pt-4">
+                  {[...Array(7)].map((_, j) => (
+                    <div 
+                      key={j} 
+                      className="w-8 bg-gradient-to-t from-emerald-500/20 to-emerald-500/5 rounded-t animate-pulse"
+                      style={{ 
+                        height: `${30 + Math.random() * 70}%`,
+                        animationDelay: `${j * 100}ms`
+                      }}
+                    ></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* CSS for shimmer effect */}
+        <style>{`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          .skeleton-shimmer {
+            animation: shimmer 1.5s infinite;
+          }
+        `}</style>
       </div>
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="h-80 bg-[#121212] rounded-xl" />
-        <div className="h-80 bg-[#121212] rounded-xl" />
-      </div>
-    </div>;
+    );
   }
 
   const overview = analytics?.overview || {};
