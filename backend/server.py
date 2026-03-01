@@ -2603,7 +2603,9 @@ async def create_offer(data: OfferCreate, request: Request):
     if seller and seller.get("phone"):
         notif_settings = seller.get("notification_settings", {})
         if notif_settings.get("whatsapp_offers", True):
-            whatsapp_msg = f"💰 Ofertă nouă pe X67!\n\n{user.get('name')} îți oferă {data.offered_price}€ pentru \"{ad.get('title', 'anunțul tău')[:30]}\"\n\nPreț cerut: {ad.get('price')}€\n\n👉 Răspunde pe x67digital.com/offers"
+            currency_symbol = "€" if data.currency == "EUR" else "RON"
+            ad_currency_symbol = "€" if ad.get("currency", "EUR") == "EUR" else "RON"
+            whatsapp_msg = f"💰 Ofertă nouă pe X67!\n\n{user.get('name')} îți oferă {data.offered_price} {currency_symbol} pentru \"{ad.get('title', 'anunțul tău')[:30]}\"\n\nPreț cerut: {ad.get('price')} {ad_currency_symbol}\n\n👉 Răspunde pe x67digital.com/offers"
             asyncio.create_task(send_whatsapp_notification(seller["phone"], whatsapp_msg))
     
     return {"offer_id": offer_id, "message": "Oferta a fost trimisă!"}
