@@ -129,6 +129,7 @@ export default function AdDetailPage() {
   // Compare & Offer states
   const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
+  const [offerCurrency, setOfferCurrency] = useState("EUR");
   const [offerMessage, setOfferMessage] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
   
