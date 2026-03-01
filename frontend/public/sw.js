@@ -1,6 +1,6 @@
-// X67 Digital Media Groupe - Service Worker v7
+// X67 Digital Media Groupe - Service Worker v8
 // Simplified version for stability
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = `x67-cache-${CACHE_VERSION}`;
 
 // Install - just skip waiting
