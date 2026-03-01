@@ -1035,12 +1035,17 @@ function AdsManagement() {
             ) : ads.length > 0 ? (
               ads.map((ad) => (
                 <TableRow key={ad.ad_id} className="border-white/5 hover:bg-white/5">
-                  <TableCell className="text-white font-medium max-w-[200px] truncate">
-                    {ad.title}
+                  <TableCell className="max-w-[200px]">
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium truncate">{ad.title}</span>
+                      <span className="text-slate-500 text-xs sm:hidden">
+                        {ad.category_id} • {ad.price ? `${ad.price} ${ad.currency || '€'}` : "Gratis"}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-slate-400 hidden sm:table-cell">{ad.category_id}</TableCell>
                   <TableCell className="text-white hidden md:table-cell">
-                    {ad.price ? `${ad.price} €` : "-"}
+                    {ad.price ? `${ad.price} ${ad.currency || '€'}` : "-"}
                   </TableCell>
                   <TableCell>{getStatusBadge(ad.status)}</TableCell>
                   <TableCell className="text-slate-400 hidden lg:table-cell">
