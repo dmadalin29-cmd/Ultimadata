@@ -357,7 +357,7 @@ function App() {
           <AuthProvider>
             <NotificationProvider>
               <ScrollToTop />
-              <div className="min-h-screen bg-[#050505]">
+              <div className="min-h-screen bg-[#050505] overflow-x-hidden">
                 <AppRouter />
                 <Toaster position="top-right" richColors />
                 <PWAPrompt />
