@@ -665,7 +665,14 @@ function UsersManagement() {
               [...Array(5)].map((_, i) => (
                 <TableRow key={i} className="border-white/5">
                   <TableCell colSpan={6}>
-                    <div className="h-10 bg-[#121212] rounded animate-pulse" />
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500/20 to-blue-500/20 animate-pulse"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-32 bg-white/10 rounded animate-pulse"></div>
+                        <div className="h-3 w-48 bg-white/5 rounded animate-pulse"></div>
+                      </div>
+                      <div className="h-6 w-16 bg-emerald-500/10 rounded-full animate-pulse"></div>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
