@@ -126,6 +126,22 @@ export default function Header() {
                   <Heart className="w-5 h-5" />
                 </Link>
                 <Link 
+                  to="/compare" 
+                  className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
+                  title="Compară anunțuri"
+                  data-testid="compare-link"
+                >
+                  <Scale className="w-5 h-5" />
+                </Link>
+                <Link 
+                  to="/offers" 
+                  className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-amber-400 transition-colors"
+                  title="Ofertele mele"
+                  data-testid="offers-link"
+                >
+                  <Gift className="w-5 h-5" />
+                </Link>
+                <Link 
                   to="/messages" 
                   className="hidden md:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-blue-400 transition-colors relative"
                   title="Mesaje"
