@@ -8,7 +8,7 @@ export default function FloatingAddButton() {
   return (
     <Link 
       to={user ? "/create-ad" : "/auth"}
-      className="fixed bottom-6 right-6 z-50 sm:hidden"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 sm:hidden"
       data-testid="floating-add-btn"
     >
       <div className="relative group">
@@ -19,11 +19,6 @@ export default function FloatingAddButton() {
         <button className="relative w-14 h-14 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-110">
           <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
         </button>
-        
-        {/* Tooltip */}
-        <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-black/90 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          Adaugă anunț
-        </span>
       </div>
     </Link>
   );
