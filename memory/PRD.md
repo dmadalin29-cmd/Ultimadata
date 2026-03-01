@@ -244,7 +244,13 @@ Extracted 9 route modules from monolithic server.py (2327 lines total):
 
 ## Completed Features (All Sessions)
 
-### Session 6 (Current)
+### Session 7 (Current - Mar 1, 2026)
+- ✅ Floating "Add Ad" Button (FAB) - mobile only
+  - Dynamic positioning for cookie/PWA banners
+  - Hidden on auth/admin/messages pages
+  - Responsive design (hidden on tablet+)
+
+### Session 6
 - ✅ Multi-language system (RO/EN)
 - ✅ Viva Wallet webhook configuration
 - ✅ Major backend refactoring (9 modules)
