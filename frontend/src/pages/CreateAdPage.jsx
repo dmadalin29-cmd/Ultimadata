@@ -71,6 +71,7 @@ export default function CreateAdPage() {
     description: "",
     price: "",
     price_type: "fixed",
+    currency: "EUR",
     contact_phone: "",
     contact_email: user?.email || "",
     images: [],
