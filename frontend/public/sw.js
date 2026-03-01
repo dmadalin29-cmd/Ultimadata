@@ -1,30 +1,34 @@
 // X67 Digital Media Groupe - Service Worker
-const CACHE_NAME = 'x67-cache-v3';
+// IMPORTANT: Change version number to force update on all devices
+const CACHE_VERSION = 'v5';
+const CACHE_NAME = `x67-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
-// Files to cache for offline use
+// Files to cache for offline use (only essential static files)
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
+  '/offline.html',
   '/manifest.json',
   '/favicon.ico',
   '/icon-192.png',
   '/icon-512.png'
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets and skip waiting
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing new version:', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Caching static assets');
       return cache.addAll(STATIC_ASSETS);
     })
   );
+  // Force activation immediately
   self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// Activate event - clean ALL old caches and take control
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating new version:', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -35,30 +39,84 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Take control of all clients immediately
+      return self.clients.claim();
+    }).then(() => {
+      // Notify all clients to refresh
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+        });
+      });
     })
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - NETWORK FIRST for HTML/JS, cache for images
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
   // Skip API requests (always go to network)
   if (event.request.url.includes('/api/')) return;
+  
+  // Skip WebSocket
+  if (event.request.url.includes('/ws/')) return;
 
+  const url = new URL(event.request.url);
+  
+  // For HTML and JS files - NETWORK FIRST (always get fresh content)
+  if (event.request.mode === 'navigate' || 
+      url.pathname.endsWith('.html') || 
+      url.pathname.endsWith('.js') ||
+      url.pathname.includes('/static/js/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Clone and cache the fresh response
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if offline
+          return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Return offline page for navigation
+            if (event.request.mode === 'navigate') {
+              return caches.match(OFFLINE_URL);
+            }
+          });
+        })
+    );
+    return;
+  }
+
+  // For images and other static assets - CACHE FIRST
   event.respondWith(
     caches.match(event.request).then((response) => {
       if (response) {
+        // Return cached version but also fetch new version in background
+        fetch(event.request).then((freshResponse) => {
+          if (freshResponse && freshResponse.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, freshResponse);
+            });
+          }
+        }).catch(() => {});
         return response;
       }
+      
+      // Not in cache, fetch from network
       return fetch(event.request).then((response) => {
-        // Don't cache non-successful responses
         if (!response || response.status !== 200) {
           return response;
         }
-        // Clone and cache the response
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
@@ -66,7 +124,6 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
     }).catch(() => {
-      // Return offline page for navigation requests
       if (event.request.mode === 'navigate') {
         return caches.match(OFFLINE_URL);
       }
@@ -121,7 +178,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Check if there's already a window open
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus();
@@ -129,7 +185,6 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // If not, open a new window
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
@@ -147,7 +202,6 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncMessages() {
-  // Sync any pending messages when back online
   console.log('[SW] Syncing messages...');
 }
 
@@ -157,5 +211,9 @@ self.addEventListener('message', (event) => {
   
   if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  if (event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: CACHE_VERSION });
   }
 });
