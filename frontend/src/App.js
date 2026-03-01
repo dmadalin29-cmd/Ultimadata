@@ -398,6 +398,7 @@ function App() {
                 <PWAPrompt />
                 <ChatbotWidget />
                 <CookieConsent />
+                <FloatingAddButton />
               </div>
             </NotificationProvider>
           </AuthProvider>
