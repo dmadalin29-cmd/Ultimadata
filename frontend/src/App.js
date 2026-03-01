@@ -66,6 +66,39 @@ function ScrollToTop() {
   return null;
 }
 
+// Service Worker Update Listener
+function ServiceWorkerUpdater() {
+  useEffect(() => {
+    // Listen for SW update messages
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'SW_UPDATED') {
+          console.log('[App] Service Worker updated to version:', event.data.version);
+          // Optionally show a toast notification
+          // toast.info('Aplicația a fost actualizată! Refresh pentru ultima versiune.');
+        }
+      });
+      
+      // Check for updates periodically (every 5 minutes)
+      const checkForUpdates = () => {
+        navigator.serviceWorker.getRegistration().then((registration) => {
+          if (registration) {
+            registration.update();
+          }
+        });
+      };
+      
+      // Check immediately and then every 5 minutes
+      checkForUpdates();
+      const interval = setInterval(checkForUpdates, 5 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, []);
+  
+  return null;
+}
+
 // Auth Context
 export const AuthContext = createContext(null);
 
