@@ -114,7 +114,7 @@ export default function Header() {
           </form>
 
           {/* Right side */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Quick Links for logged in users */}
             {user && (
               <>
@@ -127,11 +127,11 @@ export default function Header() {
                 </Link>
                 <Link 
                   to="/compare" 
-                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
+                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
                   title="Compară anunțuri"
                   data-testid="compare-link"
                 >
-                  <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Scale className="w-5 h-5" />
                 </Link>
                 <Link 
                   to="/offers" 
@@ -163,10 +163,10 @@ export default function Header() {
               </>
             )}
 
-            {/* Map Link - visible for all users on all devices */}
+            {/* Map Link - hidden on mobile */}
             <Link 
               to="/map" 
-              className="flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-purple-400 transition-colors"
+              className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-purple-400 transition-colors"
               title={t('map')}
               data-testid="map-link"
             >
@@ -177,7 +177,7 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button 
-                  className="flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
                   data-testid="language-selector"
                 >
                   <Globe className="w-5 h-5" />
