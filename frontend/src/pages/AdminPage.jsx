@@ -1378,8 +1378,14 @@ function ForumModeration() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-blue-500/20"></div>
+            <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
+          </div>
+        </div>
+        <p className="text-center text-slate-400 animate-pulse">Se încarcă forumul...</p>
       </div>
     );
   }
