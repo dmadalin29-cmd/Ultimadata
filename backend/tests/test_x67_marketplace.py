@@ -7,7 +7,7 @@ import requests
 import os
 from datetime import datetime
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://x67-portal.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://classifieds-hub-54.preview.emergentagent.com')
 
 class TestPublicAPIs:
     """Test public API endpoints - Categories, Cities, Car Brands, Moto Brands"""
