@@ -12,10 +12,10 @@ export default function FloatingAddButton() {
       const hasPwaBanner = !localStorage.getItem('pwa-banner-dismissed') && 
                           !window.matchMedia('(display-mode: standalone)').matches;
       
-      // If banners are visible, move FAB higher (above banners ~200px)
+      // If banners are visible, move FAB higher (above banners ~300px)
       // Otherwise, position it at a comfortable height above chatbot
       if (hasCookieBanner || hasPwaBanner) {
-        setBottomOffset(220); // High enough to clear banners
+        setBottomOffset(320); // High enough to clear banners completely
       } else {
         setBottomOffset(90); // Above chatbot button (which is at bottom-6 = 24px + 56px height)
       }
