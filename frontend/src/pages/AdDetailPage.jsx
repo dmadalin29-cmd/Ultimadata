@@ -960,26 +960,54 @@ export default function AdDetailPage() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between text-sm mb-4">
+            <div className="flex items-center justify-between text-sm mb-4 p-3 rounded-lg bg-white/5">
               <span className="text-slate-400">Prețul cerut:</span>
-              <span className="text-white font-bold text-lg">{ad?.price?.toLocaleString()} RON</span>
+              <span className="text-white font-bold text-lg">
+                {ad?.price?.toLocaleString()} {ad?.currency || "EUR"}
+              </span>
             </div>
             
             <div>
-              <label className="text-sm text-slate-400 mb-2 block">Oferta ta (RON) *</label>
-              <Input
-                type="number"
-                value={offerPrice}
-                onChange={(e) => setOfferPrice(e.target.value)}
-                placeholder="Introdu prețul oferit"
-                className="bg-[#121212] border-white/10 text-white text-lg"
-              />
-              {offerPrice && ad?.price && (
+              <label className="text-sm text-slate-400 mb-2 block">Oferta ta *</label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={offerPrice}
+                  onChange={(e) => setOfferPrice(e.target.value)}
+                  placeholder="Introdu prețul oferit"
+                  className="bg-[#121212] border-white/10 text-white text-lg flex-1"
+                />
+                <div className="flex rounded-lg overflow-hidden border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setOfferCurrency("EUR")}
+                    className={`px-4 py-2 text-sm font-bold transition-all ${
+                      offerCurrency === "EUR" 
+                        ? "bg-emerald-500 text-white" 
+                        : "bg-[#121212] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    € EUR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOfferCurrency("RON")}
+                    className={`px-4 py-2 text-sm font-bold transition-all ${
+                      offerCurrency === "RON" 
+                        ? "bg-blue-500 text-white" 
+                        : "bg-[#121212] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    RON
+                  </button>
+                </div>
+              </div>
+              {offerPrice && ad?.price && offerCurrency === (ad?.currency || "EUR") && (
                 <p className="text-sm mt-2 text-slate-400">
                   {((parseFloat(offerPrice) / ad.price) * 100).toFixed(0)}% din prețul cerut
                   {parseFloat(offerPrice) < ad.price && (
                     <span className="text-green-400 ml-2">
-                      (economisești {(ad.price - parseFloat(offerPrice)).toLocaleString()} RON)
+                      (economisești {(ad.price - parseFloat(offerPrice)).toLocaleString()} {offerCurrency})
                     </span>
                   )}
                 </p>
