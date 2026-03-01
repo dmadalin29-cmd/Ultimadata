@@ -1692,11 +1692,43 @@ function ReportsManagement() {
   };
 
   if (loading) {
-    return <div className="animate-pulse space-y-4">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="h-24 bg-[#121212] rounded-xl" />
-      ))}
-    </div>;
+    return (
+      <div className="space-y-6">
+        {/* Loading spinner */}
+        <div className="flex items-center justify-center py-6">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-amber-500/20"></div>
+            <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-transparent border-t-amber-500 animate-spin"></div>
+          </div>
+        </div>
+        <p className="text-center text-slate-400 animate-pulse">Se încarcă rapoartele...</p>
+        
+        {/* Skeleton stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="p-4 rounded-xl bg-[#0A0A0A] border border-white/5">
+              <div className="h-8 w-12 bg-white/10 rounded animate-pulse mb-2"></div>
+              <div className="h-4 w-20 bg-white/5 rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Skeleton reports */}
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-6 rounded-xl bg-[#0A0A0A] border border-white/5">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-red-500/20 to-orange-500/20 animate-pulse"></div>
+              <div className="flex-1 space-y-3">
+                <div className="h-5 w-48 bg-white/10 rounded animate-pulse"></div>
+                <div className="h-4 w-32 bg-white/5 rounded animate-pulse"></div>
+                <div className="h-3 w-64 bg-white/5 rounded animate-pulse"></div>
+              </div>
+              <div className="h-8 w-24 bg-amber-500/10 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
