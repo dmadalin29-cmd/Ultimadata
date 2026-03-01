@@ -46,6 +46,8 @@
 html, body {
     background-color: #050505 !important;
     color: #F8FAFC !important;
+    overflow-x: hidden;
+    max-width: 100vw;
 }
 
 body {
