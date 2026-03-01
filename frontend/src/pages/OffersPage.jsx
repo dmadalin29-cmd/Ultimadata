@@ -236,19 +236,19 @@ export default function OffersPage() {
                     <div className="flex items-center gap-4 mb-3">
                       <div className="flex-1">
                         <p className="text-slate-400 text-sm">Prețul tău</p>
-                        <p className="text-white font-bold">{offer.ad_price?.toLocaleString()} RON</p>
+                        <p className="text-white font-bold">{offer.ad_price?.toLocaleString()} {offer.ad_currency || "EUR"}</p>
                       </div>
                       <TrendingDown className="w-6 h-6 text-slate-500" />
                       <div className="flex-1">
                         <p className="text-slate-400 text-sm">Oferta</p>
-                        <p className="text-green-400 font-bold">{offer.offered_price?.toLocaleString()} RON</p>
+                        <p className="text-green-400 font-bold">{offer.offered_price?.toLocaleString()} {offer.currency || "EUR"}</p>
                       </div>
                       {offer.counter_price && (
                         <>
                           <ArrowLeftRight className="w-6 h-6 text-blue-400" />
                           <div className="flex-1">
                             <p className="text-slate-400 text-sm">Contra-oferta ta</p>
-                            <p className="text-blue-400 font-bold">{offer.counter_price?.toLocaleString()} RON</p>
+                            <p className="text-blue-400 font-bold">{offer.counter_price?.toLocaleString()} {offer.counter_currency || offer.ad_currency || "EUR"}</p>
                           </div>
                         </>
                       )}
