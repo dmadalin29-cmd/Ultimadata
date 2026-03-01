@@ -2957,6 +2957,9 @@ async def get_user_online_status(user_id: str):
 @app.websocket("/ws/chat/{user_id}")
 async def websocket_chat(websocket: WebSocket, user_id: str):
     """WebSocket endpoint for real-time messaging"""
+    # Accept the WebSocket connection first
+    await websocket.accept()
+    
     # Verify token from query params
     token = websocket.query_params.get("token")
     if not token:
@@ -2965,7 +2968,6 @@ async def websocket_chat(websocket: WebSocket, user_id: str):
     
     # Validate the token by decoding it
     try:
-        from passlib.context import CryptContext
         from jose import JWTError, jwt
         
         SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-change-in-production")
