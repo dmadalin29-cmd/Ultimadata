@@ -576,9 +576,9 @@ export default function CreateAdPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm text-slate-400 mb-2 block">Preț (€)</label>
+                    <label className="text-sm text-slate-400 mb-2 block">Preț</label>
                     <Input
                       type="number"
                       value={formData.price}
@@ -587,6 +587,21 @@ export default function CreateAdPage() {
                       className="h-12 bg-[#121212] border-white/10 text-white placeholder:text-slate-600"
                       data-testid="price-input"
                     />
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-400 mb-2 block">Monedă</label>
+                    <Select 
+                      value={formData.currency} 
+                      onValueChange={(value) => handleInputChange("currency", value)}
+                    >
+                      <SelectTrigger className="h-12 bg-[#121212] border-white/10 text-white" data-testid="currency-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#121212] border-white/10">
+                        <SelectItem value="EUR">€ Euro</SelectItem>
+                        <SelectItem value="RON">RON Lei</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <label className="text-sm text-slate-400 mb-2 block">Tip preț</label>
