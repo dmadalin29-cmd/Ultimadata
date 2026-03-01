@@ -723,8 +723,8 @@ function UsersManagement() {
               filteredUsers.map((user) => (
                 <TableRow key={user.user_id} className="border-white/5 hover:bg-white/5">
                   <TableCell className="text-white font-medium">{user.name}</TableCell>
-                  <TableCell className="text-slate-400">{user.email}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-slate-400 hidden sm:table-cell">{user.email}</TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Select
                       value={user.role}
                       onValueChange={(value) => handleUpdateRole(user.user_id, value)}
@@ -749,7 +749,7 @@ function UsersManagement() {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-slate-400">
+                  <TableCell className="text-slate-400 hidden lg:table-cell">
                     {new Date(user.created_at).toLocaleDateString("ro-RO")}
                   </TableCell>
                   <TableCell className="text-right">
