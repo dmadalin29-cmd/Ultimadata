@@ -28,9 +28,21 @@ Build a classified ads marketplace website (x67digital.com) with:
 
 ---
 
-## Latest Session Updates (Feb 28, 2026)
+## Latest Session Updates (Mar 1, 2026)
 
-### ✅ Multi-Language Feature - COMPLETED
+### ✅ Floating "Add Ad" Button (FAB) - COMPLETED
+- Created responsive FAB component (`FloatingAddButton.jsx`)
+- Features:
+  - Centered at bottom of screen on mobile only (`sm:hidden`)
+  - Dynamic positioning based on cookie/PWA banners
+  - Hidden on specific pages (auth, create-ad, admin, messages, settings)
+  - Beautiful glow effect with emerald-blue gradient
+  - z-index 60 to stay above other elements
+- **Tested on**: iPhone (375px), Android (412px), iPad (768px)
+
+### ✅ Previous Session Updates (Feb 28, 2026)
+
+### Multi-Language Feature - COMPLETED
 - Fixed LanguageContext to use React state (no page reload)
 - Language preference persisted in localStorage
 - Translations added for all major components:
@@ -38,12 +50,12 @@ Build a classified ads marketplace website (x67digital.com) with:
 - Support for date formatting with locale switching
 - **Tested: 100% pass rate**
 
-### ✅ Viva Wallet Webhook - CONFIGURED
+### Viva Wallet Webhook - CONFIGURED
 - Webhook URL: `https://ultimadata-production.up.railway.app/api/payments/webhook`
 - Verification Key: `475FFE73819D67134BBB2D6690A9023714C14E2E`
 - Event: "Plată tranzacție creată" (Transaction Payment Created)
 
-### ✅ Major Refactoring - COMPLETED
+### Major Refactoring - COMPLETED
 Extracted 9 route modules from monolithic server.py (2327 lines total):
 
 | Module | Lines | Functionality |
