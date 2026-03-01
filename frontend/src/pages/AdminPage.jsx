@@ -1033,12 +1033,12 @@ function AdsManagement() {
                   <TableCell className="text-white font-medium max-w-[200px] truncate">
                     {ad.title}
                   </TableCell>
-                  <TableCell className="text-slate-400">{ad.category_id}</TableCell>
-                  <TableCell className="text-white">
+                  <TableCell className="text-slate-400 hidden sm:table-cell">{ad.category_id}</TableCell>
+                  <TableCell className="text-white hidden md:table-cell">
                     {ad.price ? `${ad.price} €` : "-"}
                   </TableCell>
                   <TableCell>{getStatusBadge(ad.status)}</TableCell>
-                  <TableCell className="text-slate-400">
+                  <TableCell className="text-slate-400 hidden lg:table-cell">
                     {new Date(ad.created_at).toLocaleDateString("ro-RO")}
                   </TableCell>
                   <TableCell className="text-right">
