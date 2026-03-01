@@ -127,11 +127,11 @@ export default function Header() {
                 </Link>
                 <Link 
                   to="/compare" 
-                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
+                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
                   title="Compară anunțuri"
                   data-testid="compare-link"
                 >
-                  <Scale className="w-5 h-5" />
+                  <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
                 <Link 
                   to="/offers" 
