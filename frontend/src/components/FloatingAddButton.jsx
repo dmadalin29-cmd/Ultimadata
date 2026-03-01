@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 
 export default function FloatingAddButton() {
+  const location = useLocation();
   const [bottomOffset, setBottomOffset] = useState(24); // default 24px (bottom-6)
+
+  // Hide FAB on certain pages
+  const hiddenPaths = ['/auth', '/create-ad', '/admin', '/messages', '/settings'];
+  const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
   useEffect(() => {
     // Check for cookie/PWA banners and adjust position
@@ -37,6 +42,9 @@ export default function FloatingAddButton() {
       clearInterval(interval);
     };
   }, []);
+
+  // Don't render on hidden pages
+  if (shouldHide) return null;
 
   return (
     <Link 
