@@ -344,6 +344,7 @@ export default function AdDetailPage() {
         {
           ad_id: adId,
           offered_price: price,
+          currency: offerCurrency,
           message: offerMessage || null
         },
         { withCredentials: true }
@@ -351,6 +352,7 @@ export default function AdDetailPage() {
       toast.success("Oferta a fost trimisă!");
       setShowOfferDialog(false);
       setOfferPrice("");
+      setOfferCurrency("EUR");
       setOfferMessage("");
     } catch (error) {
       toast.error(error.response?.data?.detail || "Eroare la trimiterea ofertei");
