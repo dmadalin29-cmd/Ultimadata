@@ -43,6 +43,7 @@ import { LanguageProvider } from "./i18n/LanguageContext";
 import PWAPrompt from "./components/PWAPrompt";
 import ChatbotWidget from "./components/ChatbotWidget";
 import CookieConsent from "./components/CookieConsent";
+import FloatingAddButton from "./components/FloatingAddButton";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
