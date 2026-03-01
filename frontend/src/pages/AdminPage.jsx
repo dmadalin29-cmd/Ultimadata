@@ -633,6 +633,49 @@ function UsersManagement() {
     u.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (loading) {
+    return (
+      <div className="space-y-6" data-testid="admin-users-loading">
+        {/* Modern Loading Spinner */}
+        <div className="flex items-center justify-center py-8">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-4 border-blue-500/20"></div>
+            <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Users className="w-6 h-6 text-blue-400 animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <p className="text-center text-slate-400 animate-pulse">Se încarcă utilizatorii...</p>
+        
+        {/* Skeleton Table */}
+        <div className="rounded-xl bg-[#0A0A0A] border border-white/5 overflow-hidden">
+          <div className="p-4 border-b border-white/5 flex items-center justify-between">
+            <div className="h-6 w-32 bg-white/10 rounded animate-pulse"></div>
+            <div className="h-10 w-64 bg-white/5 rounded-lg animate-pulse"></div>
+          </div>
+          <div className="divide-y divide-white/5">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="p-4 flex items-center gap-4" style={{ animationDelay: `${i * 100}ms` }}>
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 animate-pulse"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-40 bg-white/10 rounded animate-pulse"></div>
+                  <div className="h-3 w-56 bg-white/5 rounded animate-pulse"></div>
+                </div>
+                <div className="hidden sm:block h-6 w-20 bg-blue-500/10 rounded-full animate-pulse"></div>
+                <div className="h-6 w-16 bg-emerald-500/10 rounded-full animate-pulse"></div>
+                <div className="flex gap-2">
+                  <div className="w-8 h-8 bg-white/5 rounded animate-pulse"></div>
+                  <div className="w-8 h-8 bg-white/5 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div data-testid="admin-users">
       <div className="flex items-center justify-between mb-6">
