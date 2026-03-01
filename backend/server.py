@@ -2570,10 +2570,12 @@ async def create_offer(data: OfferCreate, request: Request):
         "ad_id": data.ad_id,
         "ad_title": ad.get("title"),
         "ad_price": ad.get("price"),
+        "ad_currency": ad.get("currency", "EUR"),
         "buyer_id": user["user_id"],
         "buyer_name": user.get("name"),
         "seller_id": ad["user_id"],
         "offered_price": data.offered_price,
+        "currency": data.currency,
         "message": data.message,
         "status": "pending",  # pending, accepted, rejected, countered, expired
         "counter_price": None,
