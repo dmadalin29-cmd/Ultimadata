@@ -1004,10 +1004,10 @@ function AdsManagement() {
           <TableHeader>
             <TableRow className="border-white/5 hover:bg-transparent">
               <TableHead className="text-slate-400">Titlu</TableHead>
-              <TableHead className="text-slate-400">Categorie</TableHead>
-              <TableHead className="text-slate-400">Preț</TableHead>
+              <TableHead className="text-slate-400 hidden sm:table-cell">Categorie</TableHead>
+              <TableHead className="text-slate-400 hidden md:table-cell">Preț</TableHead>
               <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-slate-400">Data</TableHead>
+              <TableHead className="text-slate-400 hidden lg:table-cell">Data</TableHead>
               <TableHead className="text-slate-400 text-right">Acțiuni</TableHead>
             </TableRow>
           </TableHeader>
