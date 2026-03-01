@@ -2536,6 +2536,7 @@ async def clear_comparison(request: Request):
 class OfferCreate(BaseModel):
     ad_id: str
     offered_price: float
+    currency: Optional[str] = "EUR"
     message: Optional[str] = None
 
 @api_router.post("/offers")
