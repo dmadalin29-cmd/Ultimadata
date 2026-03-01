@@ -1499,9 +1499,9 @@ function ForumModeration() {
           <TableHeader>
             <TableRow className="border-white/5 hover:bg-transparent">
               <TableHead className="text-slate-400">Titlu</TableHead>
-              <TableHead className="text-slate-400">Autor</TableHead>
-              <TableHead className="text-slate-400">Categorie</TableHead>
-              <TableHead className="text-slate-400">Răspunsuri</TableHead>
+              <TableHead className="text-slate-400 hidden sm:table-cell">Autor</TableHead>
+              <TableHead className="text-slate-400 hidden md:table-cell">Categorie</TableHead>
+              <TableHead className="text-slate-400 hidden lg:table-cell">Răspunsuri</TableHead>
               <TableHead className="text-slate-400">Status</TableHead>
               <TableHead className="text-slate-400 text-right">Acțiuni</TableHead>
             </TableRow>
