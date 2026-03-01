@@ -696,10 +696,10 @@ function UsersManagement() {
           <TableHeader>
             <TableRow className="border-white/5 hover:bg-transparent">
               <TableHead className="text-slate-400">Nume</TableHead>
-              <TableHead className="text-slate-400">Email</TableHead>
-              <TableHead className="text-slate-400">Rol</TableHead>
+              <TableHead className="text-slate-400 hidden sm:table-cell">Email</TableHead>
+              <TableHead className="text-slate-400 hidden md:table-cell">Rol</TableHead>
               <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-slate-400">Data creării</TableHead>
+              <TableHead className="text-slate-400 hidden lg:table-cell">Data creării</TableHead>
               <TableHead className="text-slate-400 text-right">Acțiuni</TableHead>
             </TableRow>
           </TableHeader>
