@@ -199,8 +199,25 @@ export default function CategoryPage() {
 
   const hasActiveFilters = (selectedSubcategory && selectedSubcategory !== "all") || (selectedCity && selectedCity !== "all") || minPrice || maxPrice || searchQuery;
 
+  // Handle age verification
+  const handleAgeConfirm = () => {
+    setShowAgeModal(false);
+    setAgeVerified(true);
+  };
+
+  const handleAgeCancel = () => {
+    setShowAgeModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#050505]" data-testid="category-page">
+      {/* Age Verification Modal for Escorts */}
+      <AgeVerificationModal 
+        isOpen={showAgeModal} 
+        onConfirm={handleAgeConfirm}
+        onCancel={handleAgeCancel}
+      />
+      
       <SEOHead 
         title={seoData.title}
         description={seoData.description}
