@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import AdCard from "../components/AdCard";
 import SEOHead from "../components/SEOHead";
+import AgeVerificationModal from "../components/AgeVerificationModal";
 import { Button } from "../components/ui/button";
 import {
   Select,
