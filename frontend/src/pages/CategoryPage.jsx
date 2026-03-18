@@ -81,6 +81,25 @@ export default function CategoryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalAds, setTotalAds] = useState(0);
   
+  // Age verification for escorts category
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
+  
+  // Check if age verification is needed for escorts category
+  useEffect(() => {
+    if (categoryId === 'escorts' || categoryId === 'escorte') {
+      const isVerified = localStorage.getItem('age_verified_18plus') === 'true';
+      if (!isVerified) {
+        setShowAgeModal(true);
+        setAgeVerified(false);
+      } else {
+        setAgeVerified(true);
+      }
+    } else {
+      setAgeVerified(true);
+    }
+  }, [categoryId]);
+  
   // Get SEO data for current category
   const seoData = CATEGORY_SEO[categoryId] || {
     title: `Anunțuri ${categoryId} România | X67 Digital`,
