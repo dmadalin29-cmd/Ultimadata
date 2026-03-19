@@ -393,13 +393,14 @@ function App() {
             <NotificationProvider>
               <ScrollToTop />
               <ServiceWorkerUpdater />
-              <div className="min-h-screen bg-[#050505] overflow-x-hidden">
+              <div className="min-h-screen bg-[#050505] overflow-x-hidden pb-20 sm:pb-0">
                 <AppRouter />
                 <Toaster position="top-right" richColors />
                 <PWAPrompt />
                 <ChatbotWidget />
                 <CookieConsent />
                 <FloatingAddButton />
+                <MobileNavBar />
               </div>
             </NotificationProvider>
           </AuthProvider>
