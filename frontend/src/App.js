@@ -44,6 +44,7 @@ import PWAPrompt from "./components/PWAPrompt";
 import ChatbotWidget from "./components/ChatbotWidget";
 import CookieConsent from "./components/CookieConsent";
 import FloatingAddButton from "./components/FloatingAddButton";
+import MobileNavBar from "./components/MobileNavBar";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
