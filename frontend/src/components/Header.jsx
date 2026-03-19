@@ -115,40 +115,40 @@ export default function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Quick Links for logged in users */}
+            {/* Quick Links for logged in users - HIDDEN ON MOBILE (shown in bottom nav) */}
             {user && (
               <>
                 <Link 
                   to="/favorites" 
-                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-red-400 transition-colors"
+                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-red-400 transition-colors"
                   title="Favorite"
                 >
-                  <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Heart className="w-5 h-5" />
                 </Link>
                 <Link 
                   to="/compare" 
-                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
+                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-cyan-400 transition-colors"
                   title="Compară anunțuri"
                   data-testid="compare-link"
                 >
-                  <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Scale className="w-5 h-5" />
                 </Link>
                 <Link 
                   to="/offers" 
-                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-amber-400 transition-colors"
+                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-amber-400 transition-colors"
                   title="Ofertele mele"
                   data-testid="offers-link"
                 >
-                  <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Gift className="w-5 h-5" />
                 </Link>
                 <Link 
                   to="/messages" 
-                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-blue-400 transition-colors relative"
+                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-blue-400 transition-colors relative"
                   title="Mesaje"
                 >
-                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <MessageCircle className="w-5 h-5" />
                   {totalUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-red-500 text-white text-[10px] sm:text-xs flex items-center justify-center animate-pulse">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center animate-pulse">
                       {totalUnread > 9 ? "9+" : totalUnread}
                     </span>
                   )}
