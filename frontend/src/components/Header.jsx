@@ -173,11 +173,11 @@ export default function Header() {
               <Map className="w-5 h-5" />
             </Link>
 
-            {/* Language Selector - visible on all devices */}
+            {/* Language Selector - hidden on mobile (in bottom nav menu) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button 
-                  className="flex w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  className="hidden sm:flex w-10 h-10 rounded-full hover:bg-white/5 items-center justify-center text-slate-400 hover:text-white transition-colors"
                   data-testid="language-selector"
                 >
                   <Globe className="w-5 h-5" />
