@@ -355,11 +355,11 @@ export default function Header() {
               </Link>
             )}
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Hidden, using bottom nav instead */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden h-10 w-10 rounded-full hover:bg-white/5"
+              className="hidden h-10 w-10 rounded-full hover:bg-white/5"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="mobile-menu-btn"
             >
@@ -372,9 +372,9 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Hidden, using bottom nav instead */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-white/5 animate-slideDown">
+          <div className="hidden py-4 border-t border-white/5 animate-slideDown">
             <form onSubmit={handleSearch} className="mb-4">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
