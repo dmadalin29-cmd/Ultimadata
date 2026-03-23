@@ -194,11 +194,13 @@ export default function CreateAdPage() {
           }
         );
         
+        // Use Cloudinary URL directly (it's already a complete URL)
         setFormData(prev => ({
           ...prev,
-          images: [...prev.images, `${API_URL}${response.data.url}`]
+          images: [...prev.images, response.data.url]
         }));
       } catch (error) {
+        console.error("Upload error:", error);
         toast.error(`Eroare la încărcarea imaginii: ${file.name}`);
       }
     }
